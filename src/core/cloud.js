@@ -6,7 +6,7 @@ import { SAVE_VERSION } from "./rules.js";
 
 export const CLOUD_KEY = "hanh-tinh-bo-tui.cloud";
 export const API_KEY = "hanh-tinh-bo-tui.api";
-export const DEFAULT_API = "https://188-166-220-232.sslip.io";
+export const DEFAULT_API = "https://tama-thinh.duckdns.org";
 
 const TIMEOUT_MS = 8000;
 const ID_RE = /^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{16}$/;
