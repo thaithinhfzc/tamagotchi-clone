@@ -1,15 +1,14 @@
-// Playing one pet on several devices. Syncing is automatic and silent.
-// The player gets a code to carry to the other device; nothing else is their business.
-// When two devices diverge, the one played most recently wins — asking would mean
-// explaining revisions, and no game asks that.
+// Playing one pet on several devices: sign in with Google, then syncing is automatic and silent.
+// When two devices diverge, the one played most recently wins — asking would mean explaining
+// revisions, and no game asks that.
 import { store } from "../core/store.js";
 import * as C from "../core/cloud.js";
 import { toast } from "./feedback.js";
 
 const $ = id => document.getElementById(id);
 const PUSH_EVERY_MS = 60_000;
+const GIS_SRC = "https://accounts.google.com/gsi/client";
 
-const groups = id => id.replace(/(.{4})(?=.)/g, "$1 ");
 const ago = ms => {
   const m = Math.floor((Date.now() - ms) / 60000);
   return m < 1 ? "vừa xong" : m < 60 ? m + " phút trước" : Math.floor(m / 60) + " giờ trước";
@@ -20,21 +19,37 @@ const playedAt = s => s?.lastReal || 0;
 let lastPushed = null;    // serialised save as last accepted by the server
 let lastError = null;
 let busy = false;
+let gis = null;           // promise for the Google script, started on first need
+
+/* Loaded on demand rather than at boot: a player who never opens the panel never
+   fetches anything from Google, and a signed-in device does not need it at all. */
+function loadGis() {
+  if (gis) return gis;
+  gis = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = GIS_SRC;
+    s.async = true;
+    s.onload = () => resolve(window.google?.accounts?.id || null);
+    s.onerror = () => reject(new Error("không tải được Google Sign-In"));
+    document.head.appendChild(s);
+  });
+  return gis;
+}
 
 export function initCloud({ onAdopted }) {
-  const els = {
-    status:$("cloudStatus"), code:$("cloudCode"), out:$("cloudCodeOut"),
-    neu:$("cloudNew"), copy:$("cloudCopy"), link:$("cloudLink"),
-  };
+  const els = { fold:$("cloudFold"), status:$("cloudStatus"), btn:$("cloudBtn"), out:$("cloudOut") };
+  let buttonShown = false;
 
   function render() {
-    const info = C.cloudInfo(localStorage);
-    els.neu.hidden = !!info;
+    const info = C.session(localStorage);
     els.out.hidden = !info;
-    els.copy.hidden = !info;
-    for (const b of [els.link, els.neu]) b.disabled = busy;
+    els.btn.hidden = !!info;
+    els.out.disabled = busy;
 
-    if (info) els.out.textContent = groups(info.id);
+    if (!C.CLIENT_ID) {
+      els.status.textContent = "Chưa cấu hình Google Sign-In, bé chỉ được lưu trên máy này.";
+      return;
+    }
     els.status.textContent = !info
       ? "Bé đang chỉ được lưu trên máy này."
       : lastError ? "Chưa lưu lên mây được, sẽ tự thử lại."
@@ -67,38 +82,48 @@ export function initCloud({ onAdopted }) {
     return true;
   }
 
-  els.neu.addEventListener("click", () => run(async () => {
-    const r = await C.linkNew(localStorage);
-    if (!r.ok) { lastError = r.msg; return toast(r.msg, 3200); }
-    lastError = null;
+  /* ---------- sign in ---------- */
+  async function onCredential(response) {
+    await run(async () => {
+      const r = await C.signIn(localStorage, response.credential);
+      if (!r.ok) { lastError = r.msg; return toast(r.msg, 4000); }
+      lastError = null;
+      lastPushed = null;
+      buttonShown = false;
+      if (r.claimed) toast("Đã gắn " + petName(store.state) + " vào tài khoản Google của bạn", 4200);
+      else if (r.rev > 0) await autoPull();
+      else { const p = await C.push(localStorage); if (p.ok) synced(); else lastError = p.msg; }
+      if (!r.claimed && r.rev === 0) toast("Đăng nhập cùng Google này ở máy khác là chơi tiếp bé này", 4200);
+    });
+  }
+
+  async function showButton() {
+    if (buttonShown || C.session(localStorage) || !C.CLIENT_ID) return;
+    let api;
+    try { api = await loadGis(); }
+    catch (e) { lastError = e.message; return render(); }
+    if (!api) { lastError = "không tải được Google Sign-In"; return render(); }
+    api.initialize({ client_id:C.CLIENT_ID, callback:onCredential, auto_select:false });
+    api.renderButton(els.btn, { type:"standard", theme:"outline", size:"medium", text:"signin_with", shape:"pill" });
+    buttonShown = true;
+  }
+
+  els.fold.addEventListener("toggle", () => { if (els.fold.open) showButton(); });
+
+  els.out.addEventListener("click", () => {
+    C.signOut(localStorage);
     lastPushed = null;
-    const p = await C.push(localStorage);
-    if (p.ok) synced(); else lastError = p.msg;
-    toast("Dán mã này vào máy khác là chơi tiếp đúng bé này", 4200);
-  }));
-
-  els.link.addEventListener("click", () => run(async () => {
-    const r = await C.linkExisting(localStorage, els.code.value);
-    if (!r.ok) return toast(r.msg, 3200);
-    els.code.value = "";
     lastError = null;
-    if (r.empty) { lastPushed = null; return toast("Xong. Bé ở máy này sẽ được lưu lên mây", 3600); }
-    adopted(r);
-    toast("Đã đưa " + petName(store.state) + " về máy này", 3000);
-  }));
-
-  els.copy.addEventListener("click", async () => {
-    const info = C.cloudInfo(localStorage);
-    if (!info) return;
-    try { await navigator.clipboard.writeText(info.id); toast("Đã copy mã", 2000); }
-    catch { toast("Không copy được, bấm vào mã rồi Cmd+C", 3000); }
+    buttonShown = false;
+    try { window.google?.accounts?.id?.disableAutoSelect(); } catch { /* script not loaded */ }
+    render();
+    if (els.fold.open) showButton();
+    toast("Đã đăng xuất. Bé vẫn còn trên máy này và trên mây", 3600);
   });
-
-  els.code.addEventListener("keydown", e => { if (e.key === "Enter") els.link.click(); });
 
   /* ---------- automatic sync ---------- */
   async function autoPush() {
-    if (busy || !store.state || !C.cloudInfo(localStorage)) return;
+    if (busy || !store.state || !C.session(localStorage)) return;
     const json = JSON.stringify(store.state);
     if (json === lastPushed) return;
     await run(async () => {
@@ -112,21 +137,19 @@ export function initCloud({ onAdopted }) {
   }
 
   async function autoPull() {
-    if (busy || !C.cloudInfo(localStorage)) return;
-    await run(async () => {
-      const r = await C.pull(localStorage);
-      if (r.ok && !r.already) { adopted(r); toast("Đã lấy " + petName(store.state) + " mới nhất từ mây", 3000); }
-      else if (r.ok) synced();
-      else lastError = r.msg;
-    });
+    if (!C.session(localStorage)) return;
+    const r = await C.pull(localStorage);
+    if (r.ok && !r.already) { adopted(r); toast("Đã lấy " + petName(store.state) + " mới nhất từ mây", 3000); }
+    else if (r.ok) synced();
+    else lastError = r.msg;
   }
 
   /* Leaving pushes, coming back pulls — without the pull, a device left open but idle would
      never learn another one had played, then overwrite it the moment play resumed here. */
   async function onReturn() {
-    if (busy || !store.state || !C.cloudInfo(localStorage)) return;
+    if (busy || !store.state || !C.session(localStorage)) return;
     if (JSON.stringify(store.state) !== lastPushed) return autoPush();   // unsent progress here wins the tie
-    await autoPull();
+    await run(autoPull);
   }
 
   setInterval(autoPush, PUSH_EVERY_MS);
@@ -134,5 +157,5 @@ export function initCloud({ onAdopted }) {
   setInterval(render, 30_000);   // keeps the "x phút trước" line honest
   render();
 
-  if (C.cloudInfo(localStorage)) autoPull();
+  if (C.session(localStorage)) run(autoPull);
 }

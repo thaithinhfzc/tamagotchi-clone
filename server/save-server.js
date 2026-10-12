@@ -1,24 +1,15 @@
 // Cloud save endpoint. One JSON file per account, optimistic concurrency on `rev`.
+// Identity comes from a Google ID token, exchanged once for a session token.
 // No dependencies; binds to localhost and expects a TLS proxy (Caddy) in front.
 import { createServer } from "node:http";
-import { randomBytes } from "node:crypto";
-import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { accountIdFor, makeSession, newSecret, readSession, verifyIdToken } from "./google-auth.js";
 
 const MAX_BODY = 512 * 1024;
-const ID_LEN = 16;
-// Crockford-flavoured base32: no I, L, O or U, so a code read aloud or retyped stays unambiguous.
-const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const ID_RE = /^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{16}$/;
 const SAVE_VERSION = 3;
-
-export function newId() {
-  const b = randomBytes(ID_LEN);
-  let s = "";
-  for (let i = 0; i < ID_LEN; i++) s += ALPHABET[b[i] % 32];   // 256 / 32 is exact, so no modulo bias
-  return s;
-}
 
 /* ---------- rate limiting ---------- */
 const hits = new Map();
@@ -46,6 +37,7 @@ function withLock(id, fn) {
 
 /* ---------- helpers ---------- */
 const ipOf = req => (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress || "?";
+const bearer = req => (req.headers.authorization || "").replace(/^Bearer /i, "").trim();
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -64,7 +56,8 @@ function readBody(req) {
 // A save must look like a game save, so the endpoint cannot be used as free blob storage.
 const looksLikeSave = s => !!s && typeof s === "object" && !Array.isArray(s) && s.v === SAVE_VERSION && !!s.pet;
 
-export function createApp({ dataDir, origins = ["*"], newPerHour = 20, maxAccounts = 5000, accounts = 0 }) {
+export function createApp({ dataDir, secret, clientId, origins = ["*"],
+  signInPerHour = 20, maxAccounts = 5000, accounts = 0, fetchImpl = fetch }) {
   const fileOf = id => join(dataDir, id + ".json");
   let count = accounts;
 
@@ -83,7 +76,7 @@ export function createApp({ dataDir, origins = ["*"], newPerHour = 20, maxAccoun
     if (allowed) res.setHeader("Access-Control-Allow-Origin", allowed);
     res.setHeader("Vary", "Origin");
     res.setHeader("Access-Control-Allow-Methods", "GET,PUT,POST,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "content-type");
+    res.setHeader("Access-Control-Allow-Headers", "content-type, authorization");
     res.setHeader("Access-Control-Max-Age", "86400");
   }
 
@@ -92,50 +85,77 @@ export function createApp({ dataDir, origins = ["*"], newPerHour = 20, maxAccoun
     res.end(JSON.stringify(body));
   };
 
+  async function jsonBody(req, res) {
+    try { return JSON.parse(await readBody(req)); }
+    catch (e) {
+      send(res, e.code === 413 ? 413 : 400, { error:e.code === 413 ? "Dữ liệu quá lớn" : "JSON không đọc được" });
+      return null;
+    }
+  }
+
   return async function handle(req, res) {
     cors(req, res);
     if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
 
-    const url = new URL(req.url, "http://x");
-    const path = url.pathname.replace(/\/+$/, "") || "/";
+    const path = new URL(req.url, "http://x").pathname.replace(/\/+$/, "") || "/";
     const ip = ipOf(req);
 
     if (path === "/api/health") return send(res, 200, { ok:true });
 
-    if (path === "/api/account" && req.method === "POST") {
-      // Per-IP budget only slows a script down; the account cap is what actually protects the disk,
-      // since carrier NAT puts many real users behind one address.
-      if (count >= maxAccounts) return send(res, 503, { error:"Server đã đầy" });
-      if (!allow(ip, "new", newPerHour, 3600_000)) return send(res, 429, { error:"Thử lại sau" });
-      const id = newId();
-      await writeRec(id, { rev:0, updatedAt:Date.now(), state:null });
-      count++;
-      return send(res, 201, { id, rev:0 });
+    /* Trade a Google ID token for a session token. */
+    if (path === "/api/session" && req.method === "POST") {
+      if (!allow(ip, "signin", signInPerHour, 3600_000)) return send(res, 429, { error:"Thử lại sau" });
+      const body = await jsonBody(req, res);
+      if (!body) return;
+
+      let who;
+      try { who = await verifyIdToken(body.idToken, clientId, fetchImpl); }
+      catch (e) { return send(res, 401, { error:"Đăng nhập không hợp lệ: " + e.message }); }
+
+      const id = accountIdFor(who.sub);
+      let rec = await readRec(id);
+      if (!rec) {
+        if (count >= maxAccounts) return send(res, 503, { error:"Server đã đầy" });
+        rec = { rev:0, updatedAt:Date.now(), state:null };
+        await writeRec(id, rec);
+        count++;
+      }
+
+      // One-time carry-over for a pet that still lives under an old pre-login code.
+      let claimed = false;
+      if (!rec.state && typeof body.claimCode === "string" && ID_RE.test(body.claimCode)) {
+        const old = await readRec(body.claimCode);
+        if (old?.state && looksLikeSave(old.state)) {
+          rec = { rev:rec.rev + 1, updatedAt:Date.now(), state:old.state };
+          await writeRec(id, rec);            // the old record is left alone, so this stays reversible
+          claimed = true;
+        }
+      }
+
+      return send(res, 200, { token:makeSession(secret, id), rev:rec.rev, claimed });
     }
 
-    const m = path.match(/^\/api\/save\/([^/]+)$/);
-    if (m) {
-      const id = decodeURIComponent(m[1]);
-      if (!ID_RE.test(id)) return send(res, 400, { error:"Mã không hợp lệ" });
+    if (path === "/api/save") {
+      const session = readSession(secret, bearer(req));
+      if (!session) return send(res, 401, { error:"Phiên đã hết hạn, đăng nhập lại" });
       if (!allow(ip, "io", 120, 60_000)) return send(res, 429, { error:"Thử lại sau" });
+      const id = session.accountId;
 
       if (req.method === "GET") {
         const rec = await readRec(id);
-        if (!rec) return send(res, 404, { error:"Không tìm thấy mã này" });
+        if (!rec) return send(res, 404, { error:"Chưa có save nào" });
         return send(res, 200, rec);
       }
 
       if (req.method === "PUT") {
-        let body;
-        try { body = JSON.parse(await readBody(req)); }
-        catch (e) { return send(res, e.code === 413 ? 413 : 400, { error:e.code === 413 ? "Save quá lớn" : "JSON không đọc được" }); }
-
-        if (!Number.isInteger(body?.rev) || body.rev < 0) return send(res, 400, { error:"rev không hợp lệ" });
-        if (!looksLikeSave(body?.state)) return send(res, 400, { error:"Save không đúng định dạng" });
+        const body = await jsonBody(req, res);
+        if (!body) return;
+        if (!Number.isInteger(body.rev) || body.rev < 0) return send(res, 400, { error:"rev không hợp lệ" });
+        if (!looksLikeSave(body.state)) return send(res, 400, { error:"Save không đúng định dạng" });
 
         return withLock(id, async () => {
           const rec = await readRec(id);
-          if (!rec) return send(res, 404, { error:"Không tìm thấy mã này" });
+          if (!rec) return send(res, 404, { error:"Chưa có save nào" });
           if (rec.rev !== body.rev) return send(res, 409, rec);   // caller is stale; hand back the winner
           const next = { rev:rec.rev + 1, updatedAt:Date.now(), state:body.state };
           await writeRec(id, next);
@@ -150,10 +170,22 @@ export function createApp({ dataDir, origins = ["*"], newPerHour = 20, maxAccoun
   };
 }
 
-export async function start({ port, host, dataDir, origins, newPerHour, maxAccounts }) {
+/* The secret signs session tokens. Replacing the file signs everyone out. */
+async function loadSecret(dataDir) {
+  const path = join(dataDir, ".session-secret");
+  try { return (await readFile(path, "utf8")).trim(); }
+  catch { /* first run */ }
+  const s = newSecret();
+  await writeFile(path, s, { mode:0o600 });
+  await chmod(path, 0o600);
+  return s;
+}
+
+export async function start({ port, host, dataDir, clientId, origins, signInPerHour, maxAccounts, fetchImpl }) {
   await mkdir(dataDir, { recursive:true });
+  const secret = await loadSecret(dataDir);
   const accounts = (await readdir(dataDir)).filter(f => f.endsWith(".json")).length;
-  const handle = createApp({ dataDir, origins, newPerHour, maxAccounts, accounts });
+  const handle = createApp({ dataDir, secret, clientId, origins, signInPerHour, maxAccounts, accounts, fetchImpl });
   const server = createServer((req, res) => {
     handle(req, res).catch(() => {
       if (!res.headersSent) res.writeHead(500, { "content-type":"application/json" });
@@ -165,10 +197,13 @@ export async function start({ port, host, dataDir, origins, newPerHour, maxAccou
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] || "").href) {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId) { console.error("Thiếu GOOGLE_CLIENT_ID"); process.exit(1); }
   const port = +(process.env.PORT || 8787);
   const host = process.env.HOST || "127.0.0.1";
   const dataDir = process.env.DATA_DIR || "./data";
   const origins = (process.env.ALLOW_ORIGIN || "*").split(",").map(s => s.trim());
-  await start({ port, host, dataDir, origins, newPerHour:+(process.env.NEW_PER_HOUR || 20), maxAccounts:+(process.env.MAX_ACCOUNTS || 5000) });
+  await start({ port, host, dataDir, clientId, origins,
+    signInPerHour:+(process.env.SIGNIN_PER_HOUR || 20), maxAccounts:+(process.env.MAX_ACCOUNTS || 5000) });
   console.log(`save-server on http://${host}:${port} · data=${dataDir} · origins=${origins.join(",")}`);
 }
