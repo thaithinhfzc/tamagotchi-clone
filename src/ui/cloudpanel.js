@@ -118,6 +118,14 @@ export function initCloud({ onAdopted, onSignedIn, onSignedOut }) {
     api.initialize({ client_id:C.CLIENT_ID, callback:onCredential, auto_select:true });
     api.renderButton(els.btn, { type:"standard", theme:"outline", size:"large", text:"signin_with", shape:"pill" });
     buttonShown = true;
+    // Google draws the button inside a cross-origin frame, which some browsers block outright.
+    // A blank gate with no explanation leaves the player with nothing to act on.
+    setTimeout(() => {
+      if (els.btn.children.length) return;
+      buttonShown = false;
+      lastError = "Trình duyệt đang chặn nút đăng nhập của Google. Thử tắt chặn cookie bên thứ ba, hoặc mở bằng trình duyệt khác.";
+      render();
+    }, 3000);
   }
 
   async function onCredential(response) {
