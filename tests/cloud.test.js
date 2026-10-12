@@ -155,31 +155,6 @@ test("the device played most recently wins a clash", async () => {
   assert.equal(store.state.clock, bClock);
 });
 
-test("a pet saved under a pre-login code is carried into the Google account", async () => {
-  const legacyId = accountIdFor("legacy-seed");
-  const legacy = device();
-  C.setApiBase(legacy, base);
-  // Stand up an old-style record the way the pre-login server would have left it.
-  const seed = await signedIn("legacy-seed");
-  fresh("water", 21);
-  advance(150);
-  save(seed);
-  await C.push(seed);
-  const clock = store.state.clock;
-
-  legacy.setItem(C.CLOUD_KEY, JSON.stringify({ id:legacyId, rev:1 }));
-  assert.equal(C.legacyCode(legacy), legacyId);
-  assert.equal(C.session(legacy), null, "a legacy record is not a session");
-
-  store.state = null;
-  const r = await C.signIn(legacy, idToken({ sub:"fresh-google-user" }));
-  assert.ok(r.ok, r.msg);
-  assert.equal(r.claimed, true, "the old save should have been claimed");
-  const got = await C.pull(legacy);
-  assert.ok(got.ok, got.msg);
-  assert.equal(store.state.clock, clock);
-});
-
 test("tokens that fail verification are refused", async () => {
   const cases = {
     "chữ ký sai":idToken({ badSig:true }),

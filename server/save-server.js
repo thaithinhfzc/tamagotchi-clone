@@ -121,18 +121,7 @@ export function createApp({ dataDir, secret, clientId, origins = ["*"],
         count++;
       }
 
-      // One-time carry-over for a pet that still lives under an old pre-login code.
-      let claimed = false;
-      if (!rec.state && typeof body.claimCode === "string" && ID_RE.test(body.claimCode)) {
-        const old = await readRec(body.claimCode);
-        if (old?.state && looksLikeSave(old.state)) {
-          rec = { rev:rec.rev + 1, updatedAt:Date.now(), state:old.state };
-          await writeRec(id, rec);            // the old record is left alone, so this stays reversible
-          claimed = true;
-        }
-      }
-
-      return send(res, 200, { token:makeSession(secret, id), rev:rec.rev, claimed });
+      return send(res, 200, { token:makeSession(secret, id), rev:rec.rev });
     }
 
     if (path === "/api/save") {

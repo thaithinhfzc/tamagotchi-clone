@@ -11,7 +11,6 @@ export const DEFAULT_API = "https://tama-thinh.duckdns.org";
 export const CLIENT_ID = "792165330364-ostulcr3lv40kmjcb4a6j77e5gdsg1a7.apps.googleusercontent.com";
 
 const TIMEOUT_MS = 8000;
-const LEGACY_ID_RE = /^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{16}$/;
 
 /* ---------- device-local session ---------- */
 function stored(storage) {
@@ -24,12 +23,6 @@ function stored(storage) {
 export function session(storage) {
   const s = stored(storage);
   return s && typeof s.token === "string" && s.token ? s : null;
-}
-
-/* A pet saved under a pre-login code: carried over on the next sign-in, then forgotten. */
-export function legacyCode(storage) {
-  const s = stored(storage);
-  return s && !s.token && LEGACY_ID_RE.test(s.id || "") ? s.id : null;
 }
 
 function setSession(storage, info) {
@@ -96,21 +89,16 @@ function expired(storage) {
 
 /* ---------- sign in ---------- */
 export async function signIn(storage, idToken) {
-  const claimCode = legacyCode(storage);
   let r;
-  try {
-    r = await call(storage, "/api/session", {
-      method:"POST",
-      body:JSON.stringify(claimCode ? { idToken, claimCode } : { idToken }),
-    });
-  } catch (e) { return { ok:false, msg:netErr(e) }; }
+  try { r = await call(storage, "/api/session", { method:"POST", body:JSON.stringify({ idToken }) }); }
+  catch (e) { return { ok:false, msg:netErr(e) }; }
 
   if (r.status === 429) return { ok:false, msg:"Đăng nhập quá nhiều lần, thử lại sau" };
   if (r.status === 401) return { ok:false, msg:r.body?.error || "Đăng nhập không hợp lệ" };
   if (!r.ok || !r.body?.token) return { ok:false, msg:r.body?.error || "Không đăng nhập được" };
 
   setSession(storage, { token:r.body.token, rev:r.body.rev, lastSync:0 });
-  return { ok:true, rev:r.body.rev, claimed:!!r.body.claimed };
+  return { ok:true, rev:r.body.rev };
 }
 
 /* ---------- sync ---------- */

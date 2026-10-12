@@ -11,7 +11,6 @@ import { runPendingEvents } from "./ui/menus.js";
 import { renderScreen } from "./ui/screen.js";
 import { bindControls } from "./ui/input.js";
 import { initCloud } from "./ui/cloudpanel.js";
-import { signOut } from "./core/cloud.js";
 
 const $ = id => document.getElementById(id);
 const SAVE_EVERY_MS = 3000, MAX_TICKS_PER_FRAME = 400;
@@ -43,7 +42,6 @@ $("resetBtn").addEventListener("click", () => {
     return;
   }
   clearSave(localStorage);
-  signOut(localStorage);   // keep the cloud save intact: sign in again to recover it, instead of syncing the wipe across devices
   Object.assign(ui, { mode:"start", startSel:0, menuStack:[], game:null, anim:null, walkers:null, list:null });
   $("resetBtn").textContent = "Chơi lại từ đầu";
   setShell("land");
@@ -81,10 +79,19 @@ addEventListener("pagehide", () => save(localStorage));
 if (load(localStorage)) { ui.mode = "main"; summariseAbsence(catchUp()); }
 else setShell("land");
 
-initCloud({ onAdopted:away => {
-  Object.assign(ui, { mode:"main", menuStack:[], game:null, anim:null, walkers:null, list:null });
-  setShell(store.state.shell);
-  summariseAbsence(away);
-} });
+function toStart() {
+  Object.assign(ui, { mode:"start", startSel:0, menuStack:[], game:null, anim:null, walkers:null, list:null });
+  setShell("land");
+}
+
+initCloud({
+  onAdopted:away => {
+    Object.assign(ui, { mode:"main", menuStack:[], game:null, anim:null, walkers:null, list:null });
+    setShell(store.state.shell);
+    summariseAbsence(away);
+  },
+  onSignedIn:toStart,
+  onSignedOut:() => { clearSave(localStorage); toStart(); },
+});
 
 requestAnimationFrame(t => { lastT = t; frame(t); });

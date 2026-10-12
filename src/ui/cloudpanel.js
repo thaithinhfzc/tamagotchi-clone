@@ -1,4 +1,5 @@
-// Playing one pet on several devices: sign in with Google, then syncing is automatic and silent.
+// Signing in is the way in: no session, no game. Once past the gate the pet follows the
+// account across devices, and syncing is automatic and silent.
 // When two devices diverge, the one played most recently wins — asking would mean explaining
 // revisions, and no game asks that.
 import { store } from "../core/store.js";
@@ -19,10 +20,8 @@ const playedAt = s => s?.lastReal || 0;
 let lastPushed = null;    // serialised save as last accepted by the server
 let lastError = null;
 let busy = false;
-let gis = null;           // promise for the Google script, started on first need
+let gis = null;
 
-/* Loaded on demand rather than at boot: a player who never opens the panel never
-   fetches anything from Google, and a signed-in device does not need it at all. */
 function loadGis() {
   if (gis) return gis;
   gis = new Promise((resolve, reject) => {
@@ -36,26 +35,18 @@ function loadGis() {
   return gis;
 }
 
-export function initCloud({ onAdopted }) {
-  const els = { fold:$("cloudFold"), status:$("cloudStatus"), btn:$("cloudBtn"), out:$("cloudOut") };
-  const summary = els.fold.querySelector("summary");
+/* `onSignedIn` runs once the account has no pet waiting, so boot can offer a new one. */
+export function initCloud({ onAdopted, onSignedIn, onSignedOut }) {
+  const els = { gate:$("gate"), status:$("cloudStatus"), btn:$("cloudBtn"), out:$("cloudOut") };
   let buttonShown = false;
 
   function render() {
     const info = C.session(localStorage);
+    els.gate.hidden = !!info;
     els.out.hidden = !info;
-    els.btn.hidden = !!info;
     els.out.disabled = busy;
-    summary.textContent = !info && !store.state
-      ? "Đã có bé ở máy khác? Đăng nhập để mang sang"
-      : "Chơi bé này trên máy khác";
-
-    if (!C.CLIENT_ID) {
-      els.status.textContent = "Chưa cấu hình Google Sign-In, bé chỉ được lưu trên máy này.";
-      return;
-    }
-    els.status.textContent = !info
-      ? "Bé đang chỉ được lưu trên máy này."
+    els.status.textContent = !C.CLIENT_ID ? "Chưa cấu hình Google Sign-In."
+      : !info ? (lastError || "")
       : lastError ? "Chưa lưu lên mây được, sẽ tự thử lại."
       : info.lastSync ? "Đã lưu lên mây · " + ago(info.lastSync)
       : "Đang lưu lên mây…";
@@ -86,46 +77,6 @@ export function initCloud({ onAdopted }) {
     return true;
   }
 
-  /* ---------- sign in ---------- */
-  async function onCredential(response) {
-    await run(async () => {
-      const r = await C.signIn(localStorage, response.credential);
-      if (!r.ok) { lastError = r.msg; return toast(r.msg, 4000); }
-      lastError = null;
-      lastPushed = null;
-      buttonShown = false;
-      if (r.claimed) toast("Đã gắn " + petName(store.state) + " vào tài khoản Google của bạn", 4200);
-      else if (r.rev > 0) await autoPull();
-      else { const p = await C.push(localStorage); if (p.ok) synced(); else lastError = p.msg; }
-      if (!r.claimed && r.rev === 0) toast("Đăng nhập cùng Google này ở máy khác là chơi tiếp bé này", 4200);
-    });
-  }
-
-  async function showButton() {
-    if (buttonShown || C.session(localStorage) || !C.CLIENT_ID) return;
-    let api;
-    try { api = await loadGis(); }
-    catch (e) { lastError = e.message; return render(); }
-    if (!api) { lastError = "không tải được Google Sign-In"; return render(); }
-    api.initialize({ client_id:C.CLIENT_ID, callback:onCredential, auto_select:false });
-    api.renderButton(els.btn, { type:"standard", theme:"outline", size:"medium", text:"signin_with", shape:"pill" });
-    buttonShown = true;
-  }
-
-  els.fold.addEventListener("toggle", () => { if (els.fold.open) showButton(); });
-
-  els.out.addEventListener("click", () => {
-    C.signOut(localStorage);
-    lastPushed = null;
-    lastError = null;
-    buttonShown = false;
-    try { window.google?.accounts?.id?.disableAutoSelect(); } catch { /* script not loaded */ }
-    render();
-    if (els.fold.open) showButton();
-    toast("Đã đăng xuất. Bé vẫn còn trên máy này và trên mây", 3600);
-  });
-
-  /* ---------- automatic sync ---------- */
   async function autoPush() {
     if (busy || !store.state || !C.session(localStorage)) return;
     const json = JSON.stringify(store.state);
@@ -143,9 +94,10 @@ export function initCloud({ onAdopted }) {
   async function autoPull() {
     if (!C.session(localStorage)) return;
     const r = await C.pull(localStorage);
-    if (r.ok && !r.already) { adopted(r); toast("Đã lấy " + petName(store.state) + " mới nhất từ mây", 3000); }
-    else if (r.ok) synced();
-    else lastError = r.msg;
+    if (r.ok && !r.already) { adopted(r); return true; }
+    if (r.ok) { synced(); return true; }
+    lastError = r.msg;
+    return false;
   }
 
   /* Leaving pushes, coming back pulls — without the pull, a device left open but idle would
@@ -156,13 +108,48 @@ export function initCloud({ onAdopted }) {
     await run(autoPull);
   }
 
+  /* ---------- the gate ---------- */
+  async function showButton() {
+    if (buttonShown || C.session(localStorage) || !C.CLIENT_ID) return;
+    let api;
+    try { api = await loadGis(); }
+    catch (e) { lastError = e.message; return render(); }
+    if (!api) { lastError = "không tải được Google Sign-In"; return render(); }
+    api.initialize({ client_id:C.CLIENT_ID, callback:onCredential, auto_select:true });
+    api.renderButton(els.btn, { type:"standard", theme:"outline", size:"large", text:"signin_with", shape:"pill" });
+    buttonShown = true;
+  }
+
+  async function onCredential(response) {
+    await run(async () => {
+      const r = await C.signIn(localStorage, response.credential);
+      if (!r.ok) { lastError = r.msg; return toast(r.msg, 4000); }
+      lastError = null;
+      lastPushed = null;
+      buttonShown = false;
+      // A pet waiting in the account wins; otherwise this device starts one and pushes it.
+      if (r.rev > 0 && await autoPull()) return;
+      if (store.state) { const p = await C.push(localStorage); if (p.ok) synced(); else lastError = p.msg; }
+      else if (onSignedIn) onSignedIn();
+    });
+  }
+
+  els.out.addEventListener("click", () => {
+    C.signOut(localStorage);
+    lastPushed = null;
+    lastError = null;
+    buttonShown = false;
+    try { window.google?.accounts?.id?.disableAutoSelect(); } catch { /* script not loaded */ }
+    if (onSignedOut) onSignedOut();          // clears the local save: a signed-out device keeps no pet
+    render();
+    showButton();
+  });
+
   setInterval(autoPush, PUSH_EVERY_MS);
   document.addEventListener("visibilitychange", () => { if (document.hidden) autoPush(); else onReturn(); });
   setInterval(render, 30_000);   // keeps the "x phút trước" line honest
   render();
 
   if (C.session(localStorage)) run(autoPull);
-  // A fresh device has no pet and no session: the offer has to be visible, or the player
-  // starts a second pet without ever learning the first one could come across.
-  else if (!store.state) { els.fold.open = true; showButton(); }
+  else showButton();
 }

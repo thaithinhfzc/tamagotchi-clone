@@ -12,6 +12,15 @@
 </head>
 <body>
 <div class="wrap">
+  <div id="gate" hidden>
+    <div class="gatebox">
+      <h1>Hành Tinh Bỏ Túi</h1>
+      <p>Đăng nhập để bắt đầu. Bé của bạn sẽ theo được sang điện thoại hay máy tính khác.</p>
+      <div id="cloudBtn"></div>
+      <p class="note" id="cloudStatus"></p>
+    </div>
+  </div>
+
   <section class="stage" aria-label="Máy nuôi thú ảo">
     <div class="device" id="device" data-shell="water">
       <div class="brand">hành tinh bỏ túi</div>
@@ -81,19 +90,11 @@
       <div class="seg" style="margin-top:10px">
         <button class="plain" id="pauseBtn">Tạm dừng</button>
         <button class="plain" id="soundBtn">Âm thanh: bật</button>
+        <button class="plain" id="cloudOut">Đăng xuất</button>
         <button class="plain danger" id="resetBtn">Chơi lại từ đầu</button>
       </div>
     </div>
 
-    <details class="fold" id="cloudFold">
-      <summary>Chơi bé này trên máy khác</summary>
-      <p class="note" id="cloudStatus"></p>
-      <div id="cloudBtn" style="margin-top:8px"></div>
-      <div class="seg" style="margin-top:6px">
-        <button class="plain" id="cloudOut" hidden>Đăng xuất</button>
-      </div>
-      <p class="note">Đăng nhập cùng một Google ở máy khác là chơi tiếp đúng bé này. Bé tự được lưu, không cần bấm gì thêm.</p>
-    </details>
 
     <div>
       <h2>Vòng đời</h2>

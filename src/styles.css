@@ -101,6 +101,11 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15p
 .seg input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .code{font-family:var(--mono,ui-monospace,monospace);font-weight:600;letter-spacing:.08em;color:var(--ink);user-select:all;
   align-self:center;padding:4px 0}
+#gate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:24px;
+  background:color-mix(in srgb,var(--bg,#fbfbfd) 92%,transparent);backdrop-filter:blur(6px)}
+.gatebox{max-width:40ch;text-align:center;display:grid;gap:10px;justify-items:center}
+.gatebox h1{font-family:var(--display);font-size:1.5rem;margin:0}
+.gatebox p{margin:0;color:var(--muted)}
 .fold>summary{font-family:var(--display);font-weight:700;font-size:1.05rem;cursor:pointer;list-style:none;
   display:flex;align-items:center;gap:6px}
 .fold>summary::-webkit-details-marker{display:none}
