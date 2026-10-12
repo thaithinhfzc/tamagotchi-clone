@@ -85,29 +85,20 @@
       </div>
     </div>
 
-    <div>
-      <h2>Đồng bộ nhiều máy</h2>
-      <p class="note" id="cloudStatus">Chưa liên kết máy nào.</p>
-      <div class="seg" style="margin-top:10px">
-        <button class="plain" id="cloudNew">Tạo mã mới</button>
-        <button class="plain" id="cloudCopy" hidden>Copy mã</button>
-        <button class="plain" id="cloudPush">Đẩy lên</button>
-        <button class="plain" id="cloudPull">Tải về</button>
+    <details class="fold">
+      <summary>Chơi bé này trên máy khác</summary>
+      <p class="note" id="cloudStatus"></p>
+      <div class="seg" style="margin-top:8px">
+        <button class="plain" id="cloudNew">Lấy mã cho bé</button>
+        <span class="code" id="cloudCodeOut" hidden></span>
+        <button class="plain" id="cloudCopy" hidden>copy</button>
       </div>
       <div class="seg" style="margin-top:6px">
-        <input id="cloudCode" placeholder="Dán mã từ máy khác" autocomplete="off" spellcheck="false" aria-label="Mã tài khoản">
-        <button class="plain" id="cloudLink">Dùng mã</button>
+        <input id="cloudCode" placeholder="Dán mã từ máy khác" autocomplete="off" spellcheck="false" aria-label="Mã của bé">
+        <button class="plain" id="cloudLink">dùng</button>
       </div>
-      <div class="seg" id="cloudConflict" hidden style="margin-top:6px">
-        <button class="plain" id="cloudKeepLocal">Giữ bản máy này</button>
-        <button class="plain" id="cloudTakeCloud">Lấy bản trên cloud</button>
-      </div>
-      <div class="seg" style="margin-top:6px">
-        <button class="plain danger" id="cloudUnlink" hidden>Bỏ liên kết máy này</button>
-      </div>
-      <p class="note">Bấm <b>Tạo mã mới</b> ở máy đầu tiên, rồi dán mã đó vào máy thứ hai. Save tự đẩy lên mỗi phút và lúc đóng tab, tự tải về khi mở game.</p>
-      <p class="note">Mã chính là chìa khoá — ai có mã là vào được save của bạn, nên đừng đăng nó lên chỗ công khai. Bỏ liên kết chỉ ngắt máy này, save trên server vẫn còn.</p>
-    </div>
+      <p class="note">Mã là chìa khoá vào bé của bạn: ai có mã cũng vào được.</p>
+    </details>
 
     <div>
       <h2>Vòng đời</h2>
