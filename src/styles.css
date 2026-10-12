@@ -76,7 +76,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15p
   text-align:center;text-shadow:none;font-size:6.4cqw;line-height:1}
 
 /* ---------- manual card ---------- */
-.manual{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px 26px;min-width:0;display:grid;gap:22px}
+.manual{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px 26px;min-width:0;
+  display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
 .manual h1{font-family:var(--display);font-weight:800;font-size:2.3rem;line-height:1.05;margin:0;text-wrap:balance}
 .lede{color:var(--muted);margin:.4rem 0 0;max-width:62ch}
 .manual h2{font-family:var(--display);font-weight:700;font-size:1.05rem;margin:0 0 8px;letter-spacing:.01em}
@@ -96,22 +97,12 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15p
 .seg button:focus-visible,.plain:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .plain.danger{color:var(--accent)}
 .plain[disabled]{opacity:.5;cursor:default}
-.seg input{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--chip);color:var(--ink);
-  border-radius:999px;padding:5px 13px;min-width:0;flex:1 1 15ch}
-.seg input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.code{font-family:var(--mono,ui-monospace,monospace);font-weight:600;letter-spacing:.08em;color:var(--ink);user-select:all;
-  align-self:center;padding:4px 0}
-#gate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:24px;
+#gate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;align-content:center;
+  padding:24px max(16px,env(safe-area-inset-left,0px));overflow:auto;-webkit-overflow-scrolling:touch;
   background:color-mix(in srgb,var(--bg,#fbfbfd) 92%,transparent);backdrop-filter:blur(6px)}
 .gatebox{max-width:40ch;text-align:center;display:grid;gap:10px;justify-items:center}
 .gatebox h1{font-family:var(--display);font-size:1.5rem;margin:0}
 .gatebox p{margin:0;color:var(--muted)}
-.fold>summary{font-family:var(--display);font-weight:700;font-size:1.05rem;cursor:pointer;list-style:none;
-  display:flex;align-items:center;gap:6px}
-.fold>summary::-webkit-details-marker{display:none}
-.fold>summary::before{content:"›";display:inline-block;transition:transform .15s;color:var(--muted)}
-.fold[open]>summary::before{transform:rotate(90deg)}
-.fold>summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 .note{font-size:.86rem;color:var(--muted);margin:6px 0 0;max-width:62ch}
 .tips{margin:0;padding-left:1.1rem;display:grid;gap:5px}
 .tips li{max-width:66ch}
@@ -123,3 +114,14 @@ table.num th{font-family:var(--display);font-weight:700}
 .gap{margin:0;padding-left:1.1rem;display:grid;gap:4px;color:var(--muted);font-size:.92rem}
 .status-line{font-family:var(--pixel);font-size:1.15rem;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){.device{transition:none}.blink{animation:none}}
+
+/* phone portrait: the panel's 26px side padding and the 2.3rem title are sized for a column,
+   not for a 390px screen */
+@media (max-width:560px){
+  .wrap{padding-block:18px 36px;gap:22px}
+  .manual{padding:18px 16px;gap:18px;border-radius:14px}
+  .manual h1{font-size:1.75rem}
+  .keys{grid-template-columns:auto minmax(0,1fr);gap:5px 10px}
+  .seg button,.plain{padding:6px 12px}
+  .gatebox h1{font-size:1.35rem}
+}
