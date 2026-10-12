@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chính sách bảo mật · Hành Tinh Bỏ Túi</title>
+<style>
+  :root{color-scheme:light dark;--ink:#20242c;--muted:#5c6572;--line:#d8dde5;--bg:#fbfbfd;--accent:#e4572e}
+  @media (prefers-color-scheme:dark){:root{--ink:#e7eaf0;--muted:#9aa4b2;--line:#2c323c;--bg:#15181d}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  main{max-width:68ch;margin:0 auto;padding:48px 16px 80px}
+  h1{font-size:1.6rem;margin:0 0 4px;line-height:1.25}
+  h2{font-size:1.1rem;margin:36px 0 8px}
+  p,li{color:var(--ink);max-width:66ch}
+  .sub{color:var(--muted);margin:0 0 8px}
+  .lede{border-left:3px solid var(--accent);padding-left:14px;margin:24px 0}
+  ul{padding-left:1.2rem}
+  li{margin:4px 0}
+  a{color:var(--accent)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
+    background:color-mix(in srgb,var(--ink) 8%,transparent);padding:1px 5px;border-radius:4px}
+  hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+  footer{color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>Chính sách bảo mật</h1>
+  <p class="sub">Hành Tinh Bỏ Túi · cập nhật 12/10/2026</p>
+
+  <p class="lede">Game lưu tiến trình con pet của bạn để bạn chơi tiếp trên máy khác. Chỉ vậy thôi. Không quảng cáo, không theo dõi, không chia sẻ cho ai.</p>
+
+  <h2>Chơi mà không đăng nhập</h2>
+  <p>Nếu bạn không đăng nhập, mọi thứ nằm trong bộ nhớ của trình duyệt trên máy bạn (<code>localStorage</code>). Không có gì được gửi đi đâu cả. Xoá dữ liệu trình duyệt là xoá luôn con pet.</p>
+
+  <h2>Khi bạn đăng nhập bằng Google</h2>
+  <p>Google gửi cho server một ID token, trong đó có mã định danh tài khoản Google của bạn và địa chỉ email.</p>
+  <p>Server dùng mã định danh đó để tạo một chuỗi băm một chiều, rồi lấy chuỗi băm làm tên ô lưu. <strong>Email không được lưu lại</strong> — nó chỉ đi qua trong lúc kiểm tính hợp lệ của token rồi bị bỏ đi.</p>
+  <p>Server không xin và không nhận tên, ảnh đại diện, danh bạ, Drive, hay bất cứ thứ gì khác trong tài khoản Google của bạn.</p>
+
+  <h2>Những gì được lưu trên server</h2>
+  <ul>
+    <li>Chuỗi băm sinh ra từ mã định danh Google. Không đảo ngược lại thành tài khoản của bạn được.</li>
+    <li>Dữ liệu game: trạng thái con pet, đồ đạc, tiến trình, các mốc thời gian trong game.</li>
+    <li>Thời điểm lần lưu gần nhất.</li>
+  </ul>
+  <p>Địa chỉ IP không được lưu. Access log của web server đang tắt.</p>
+
+  <h2>Những gì không có</h2>
+  <ul>
+    <li>Không quảng cáo.</li>
+    <li>Không analytics, không pixel, không tracking script.</li>
+    <li>Không chia sẻ, không bán dữ liệu cho bất kỳ ai.</li>
+    <li>Không cookie theo dõi. Phiên đăng nhập lưu trong <code>localStorage</code> của trình duyệt bạn.</li>
+  </ul>
+
+  <h2>Dữ liệu nằm ở đâu</h2>
+  <p>Một server duy nhất đặt tại Singapore (DigitalOcean), chỉ truy cập qua HTTPS.</p>
+
+  <h2>Đăng xuất và xoá dữ liệu</h2>
+  <p>Đăng xuất chỉ ngắt máy đó khỏi tài khoản. Bản lưu trên server vẫn còn, để bạn đăng nhập lại là chơi tiếp.</p>
+  <p>Muốn xoá hẳn dữ liệu trên server, gửi email tới <a href="mailto:thaithinhfzc@gmail.com">thaithinhfzc@gmail.com</a> <strong>từ chính địa chỉ Gmail bạn dùng để đăng nhập</strong> — đó là cách duy nhất để biết ô lưu nào là của bạn, vì server không giữ email của ai. Dữ liệu sẽ được xoá trong vòng 30 ngày.</p>
+
+  <h2>Trẻ em</h2>
+  <p>Game không thu thập dữ liệu nào vượt ngoài những gì ghi ở trên, và không nhắm tới việc thu thập thông tin cá nhân của trẻ em.</p>
+
+  <h2>Thay đổi chính sách</h2>
+  <p>Nếu có thay đổi, ngày cập nhật ở đầu trang sẽ đổi theo. Toàn bộ mã nguồn của game và của server đều công khai tại <a href="https://github.com/thaithinhfzc/tamagotchi-clone">github.com/thaithinhfzc/tamagotchi-clone</a>, nên bạn kiểm chứng được những gì viết ở trên.</p>
+
+  <hr>
+
+  <h2>English summary</h2>
+  <p>This game saves your virtual pet's progress so you can continue on another device. Signing in with Google sends the server an ID token; the server derives a one-way hash from your Google account identifier and uses it as the name of your save slot. <strong>Your email address is never stored</strong> — it passes through token validation and is discarded. No name, picture, contacts or other Google data is requested.</p>
+  <p>Stored: the derived hash, your game save, and the time it was last written. No IP addresses; web server access logs are disabled. No ads, no analytics, no tracking, no sharing or selling of data. Data lives on a single server in Singapore, over HTTPS only.</p>
+  <p>Signing out only detaches that device. To delete your data from the server, email <a href="mailto:thaithinhfzc@gmail.com">thaithinhfzc@gmail.com</a> from the Gmail address you signed in with — the only way to identify your slot, since no email is kept. Deletion within 30 days. All source code is public at <a href="https://github.com/thaithinhfzc/tamagotchi-clone">github.com/thaithinhfzc/tamagotchi-clone</a>.</p>
+
+  <hr>
+  <footer><a href="./">← Về game</a></footer>
+</main>
+</body>
+</html>
