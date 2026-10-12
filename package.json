@@ -1,0 +1,13 @@
+{
+  "name": "hanh-tinh-bo-tui",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Mô phỏng Tamagotchi Paradise (wave 1) theo số liệu cộng đồng",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "test": "node --test \"tests/**/*.test.js\"",
+    "check": "node scripts/check.js"
+  },
+  "engines": { "node": ">=20" }
+}

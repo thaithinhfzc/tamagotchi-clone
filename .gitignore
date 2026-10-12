@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+
+# player saves written by server/save-server.js — never commit these.
+# Leading slash matters: a bare "data/" would also swallow src/data/.
+/data/
+/server/data/

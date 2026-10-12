@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hành Tinh Bỏ Túi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600&family=VT323&display=swap">
+<link rel="stylesheet" href="src/styles.css">
+<script type="module" src="src/main.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <section class="stage" aria-label="Máy nuôi thú ảo">
+    <div class="device" id="device" data-shell="water">
+      <div class="brand">hành tinh bỏ túi</div>
+      <div class="dial" id="dial" title="Núm xoay: zoom và chọn. Bấm giữa núm: Lab">
+        <button class="dl" id="dialL" aria-label="Xoay núm sang trái"></button>
+        <button class="dr" id="dialR" aria-label="Xoay núm sang phải"></button>
+        <button class="cap" id="dialCap" aria-label="Bấm núm: mở Lab"></button>
+      </div>
+      <div class="dial-hint">◀ ▶<br>bấm: LAB</div>
+      <div class="bezel">
+        <div class="screen">
+          <canvas id="cv" width="96" height="80"></canvas>
+          <div class="hud">
+            <div class="hud-top"><span id="hTL"></span><span id="hTR"></span></div>
+            <div class="hud-bot"><span id="hBL"></span><span id="hBR"></span></div>
+            <div class="panel" id="hPanel" hidden></div>
+            <div class="menu" id="hMenu" hidden></div>
+            <div class="toast" id="hToast" hidden></div>
+          </div>
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn" data-a="A" aria-label="Nút A: chọn, mở menu">A</button>
+        <button class="btn" data-a="B" aria-label="Nút B: xác nhận">B</button>
+        <button class="btn" data-a="C" aria-label="Nút C: quay lại">C</button>
+      </div>
+    </div>
+    <div class="status-line" id="statusLine">&nbsp;</div>
+  </section>
+
+  <aside class="manual">
+    <div>
+      <h1>Hành Tinh Bỏ Túi</h1>
+      <p class="lede">Bản mô phỏng tự làm, dựng lại luật chơi Tamagotchi Paradise đời đầu (Vùng Đất, Nước, Trời) theo số liệu cộng đồng đã đo: wiki Tamagotchi fandom, TamaVault và sách hướng dẫn chính hãng. Hình và tên nhân vật là tự vẽ, tự đặt. Con số nào cộng đồng chưa đo được thì đánh dấu <span class="est">ước lượng</span>.</p>
+    </div>
+
+    <div>
+      <h2>Điều khiển</h2>
+      <dl class="keys">
+        <dt>◀ ▶ / Q E</dt><dd>Xoay núm: đổi tầng zoom, chọn trong menu, điều khiển trong trò chơi.</dd>
+        <dt>Bấm núm / V</dt><dd>Mở Lab: thông tin, nhiệm vụ, trò kiếm xu, cửa hàng, trợ giúp, sổ tay.</dd>
+        <dt>A / Z</dt><dd>Mở menu, chọn. Trong trò Mũi tên: bên trái. Trong trò Cờ: cờ trắng.</dd>
+        <dt>B / X / Enter</dt><dd>Xác nhận. Trong trò Mũi tên: bên phải. Trong trò Cờ: cờ đỏ.</dd>
+        <dt>C / Esc</dt><dd>Quay lại. Bấm A và B cùng lúc để giơ cả hai cờ.</dd>
+      </dl>
+    </div>
+
+    <div>
+      <h2>Bốn tầng zoom</h2>
+      <ul class="zooms" id="zoomList">
+        <li data-z="0"><strong>Vũ trụ</strong>Vì sao ký ức, trang trí hành tinh, du hành, cấp hành tinh.</li>
+        <li data-z="1"><strong>Vùng đất</strong>Đồ chơi ngoài trời, săn trứng, dọn phân, đổi vùng.</li>
+        <li data-z="2"><strong>Thú cưng</strong>Cho ăn, chơi, tắm. Từ 19:00 cho đi ngủ, từ 6:00 đánh thức.</li>
+        <li data-z="3"><strong>Tế bào</strong>Các ô biểu tượng, chữa bệnh. Bấm A xem chỉ số.</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2>Tốc độ thời gian</h2>
+      <div class="seg" id="speedSeg" role="group" aria-label="Tốc độ thời gian">
+        <button data-s="1">1× như máy thật</button>
+        <button data-s="10">10×</button>
+        <button data-s="60">60×</button>
+        <button data-s="300">300×</button>
+      </div>
+      <p class="note">Ngày giờ trong game bắt đầu theo đồng hồ của bạn, nên ở 1× khớp giờ thật, kể cả ngày giảm giá và sự kiện trong tháng. Đóng tab thì thời gian vẫn chạy ở 1× (tối đa 24 giờ).</p>
+      <div class="seg" style="margin-top:10px">
+        <button class="plain" id="pauseBtn">Tạm dừng</button>
+        <button class="plain" id="soundBtn">Âm thanh: bật</button>
+        <button class="plain danger" id="resetBtn">Chơi lại từ đầu</button>
+      </div>
+    </div>
+
+    <div>
+      <h2>Đồng bộ nhiều máy</h2>
+      <p class="note" id="cloudStatus">Chưa liên kết máy nào.</p>
+      <div class="seg" style="margin-top:10px">
+        <button class="plain" id="cloudNew">Tạo mã mới</button>
+        <button class="plain" id="cloudCopy" hidden>Copy mã</button>
+        <button class="plain" id="cloudPush">Đẩy lên</button>
+        <button class="plain" id="cloudPull">Tải về</button>
+      </div>
+      <div class="seg" style="margin-top:6px">
+        <input id="cloudCode" placeholder="Dán mã từ máy khác" autocomplete="off" spellcheck="false" aria-label="Mã tài khoản">
+        <button class="plain" id="cloudLink">Dùng mã</button>
+      </div>
+      <div class="seg" id="cloudConflict" hidden style="margin-top:6px">
+        <button class="plain" id="cloudKeepLocal">Giữ bản máy này</button>
+        <button class="plain" id="cloudTakeCloud">Lấy bản trên cloud</button>
+      </div>
+      <div class="seg" style="margin-top:6px">
+        <button class="plain danger" id="cloudUnlink" hidden>Bỏ liên kết máy này</button>
+      </div>
+      <p class="note">Bấm <b>Tạo mã mới</b> ở máy đầu tiên, rồi dán mã đó vào máy thứ hai. Save tự đẩy lên mỗi phút và lúc đóng tab, tự tải về khi mở game.</p>
+      <p class="note">Mã chính là chìa khoá — ai có mã là vào được save của bạn, nên đừng đăng nó lên chỗ công khai. Bỏ liên kết chỉ ngắt máy này, save trên server vẫn còn.</p>
+    </div>
+
+    <div>
+      <h2>Vòng đời</h2>
+      <ul class="tips">
+        <li><b>Em bé</b> (1–4 giờ): mỗi 15 phút ở một vùng nhận 1 ô vùng. Đủ 4 ô cùng vùng thì biểu tượng "!" hiện ở tầng Tế bào. Zoom vào đó để bé tiến hoá thành trẻ con của vùng ấy. Em bé ngủ trưa 5 phút lúc 30 phút tuổi, và luôn ốm một lần lúc 10 phút tuổi.</li>
+        <li><b>Trẻ con</b> (24–28 giờ): thức ăn quyết định loài. Mỗi 5 điểm cùng loại thành 1 ô thức ăn, tối đa 4, ô cũ nhất bị đẩy ra. Đồ sống cho +2 hoặc +1 điểm, món nấu +4. Chỉ ăn hạt hoặc ăn đều các loại thì ra loài mặc định.</li>
+        <li><b>Thiếu niên</b> (24 giờ): ô chăm sóc quyết định dạng trưởng thành. Hoàn hảo cần 0 lỗi, 5 lần đầy bụng và 5 lần đầy vui. Các mức còn lại: 0–1 lỗi, 2–5 lỗi, từ 6 lỗi. Lỗi cộng dồn từ lúc trẻ con.</li>
+        <li><b>Trưởng thành:</b> sống mãi nếu chăm tốt, không có giai đoạn già. Mỗi dạng có tốc độ đói và vui riêng.</li>
+        <li><b>Chết</b> khi ốm 5 lần trong một giai đoạn hoặc để đói rỗng nhiều giờ <span class="est">ước lượng 12 giờ</span>. Thần chết hiện ra trước: bấm nút ở tầng Thú cưng để đuổi đi. Bé nào sống từ 30 ngày trở lên thì khi mất thành vì sao cười, và sẽ cứu bé sau một lần.</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2>Số liệu đang dùng</h2>
+      <div class="tablewrap">
+        <table class="num">
+          <thead><tr><th>Mục</th><th>Giá trị</th><th>Nguồn</th></tr></thead>
+          <tbody>
+            <tr><td>Thanh đói / vui</td><td>5 ô / 20 vạch</td><td>sách hướng dẫn, wiki</td></tr>
+            <tr><td>Tụt đói / vui</td><td>Em bé 3/5 phút · Trẻ 45/20 · Thiếu niên 60/30 · Trưởng thành 30–90 tuỳ dạng</td><td>wiki</td></tr>
+            <tr><td>Lỗi chăm sóc</td><td>Bé gọi mà 15 phút không xử lý</td><td>wiki</td></tr>
+            <tr><td>Ốm sau lỗi</td><td>35% khi số lỗi không chia hết cho 2 hoặc 3 (lỗi thứ 1, 5, 7…)</td><td>wiki</td></tr>
+            <tr><td>Ốm vì phân</td><td>6 bãi phân thâm (nằm quá 1 giờ)</td><td>wiki</td></tr>
+            <tr><td>Giờ ngủ</td><td>Cho ngủ 19:00–21:59, tự ngủ 22:00 · Đánh thức 6:00–9:59, tự dậy 10:00</td><td>wiki</td></tr>
+            <tr><td>Săn trứng</td><td>Tối đa 9 trứng, 10% khi bé đi cùng và vui đầy. Trước 19:00, mỗi bé một lần mỗi ngày.</td><td>wiki, TamaVault</td></tr>
+            <tr><td>Trò chơi tăng vui</td><td>UFO thắng +10 / thua +5 · Mũi tên +5 / +1</td><td>TamaVault</td></tr>
+            <tr><td>Giá món nấu / đồ ăn vặt</td><td>300–800G / 3000–5000G</td><td>wiki</td></tr>
+            <tr><td>Phân giữa các lần</td><td>Em bé 10 phút · lớn hơn <span class="est">ước lượng 60–180 phút</span></td><td>wiki / ước lượng</td></tr>
+            <tr><td>Bình nhiên liệu</td><td><span class="est">ước lượng 20 bãi</span></td><td>chưa ai đo</td></tr>
+            <tr><td>Xu từ trò Lab</td><td><span class="est">ước lượng 100–300G mỗi lượt Dễ, Vừa ×2, Khó ×3</span></td><td>chưa ai đo</td></tr>
+            <tr><td>Tỉ lệ thành đôi</td><td><span class="est">ước lượng theo đói và vui</span> · thú săn với con mồi luôn thất bại</td><td>wiki / ước lượng</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <h2>Không giống được máy thật</h2>
+      <ul class="gap">
+        <li>Hình và tên nhân vật gốc có bản quyền, nên bản này tự vẽ, tự đặt tên. Cấu trúc loài, các mức chăm sóc và chỉ số đói/vui từng dạng thì giữ đúng.</li>
+        <li>Kết nối hai máy, nhân vật bí mật theo màu vỏ, Lab Tama ở cửa hàng, mã QR và mã quà: cần máy hoặc mã thật.</li>
+        <li>Các con số đánh dấu ước lượng ở bảng trên.</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+</body>
+</html>
