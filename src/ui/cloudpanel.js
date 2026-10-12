@@ -38,6 +38,7 @@ function loadGis() {
 
 export function initCloud({ onAdopted }) {
   const els = { fold:$("cloudFold"), status:$("cloudStatus"), btn:$("cloudBtn"), out:$("cloudOut") };
+  const summary = els.fold.querySelector("summary");
   let buttonShown = false;
 
   function render() {
@@ -45,6 +46,9 @@ export function initCloud({ onAdopted }) {
     els.out.hidden = !info;
     els.btn.hidden = !!info;
     els.out.disabled = busy;
+    summary.textContent = !info && !store.state
+      ? "Đã có bé ở máy khác? Đăng nhập để mang sang"
+      : "Chơi bé này trên máy khác";
 
     if (!C.CLIENT_ID) {
       els.status.textContent = "Chưa cấu hình Google Sign-In, bé chỉ được lưu trên máy này.";
@@ -158,4 +162,7 @@ export function initCloud({ onAdopted }) {
   render();
 
   if (C.session(localStorage)) run(autoPull);
+  // A fresh device has no pet and no session: the offer has to be visible, or the player
+  // starts a second pet without ever learning the first one could come across.
+  else if (!store.state) { els.fold.open = true; showButton(); }
 }
