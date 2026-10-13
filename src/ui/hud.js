@@ -2,9 +2,9 @@
 // Menus and lists are not drawn here any more — ui/sheet.js renders them as tappable DOM.
 import { ui } from "./state.js";
 import { gameHud, gameKind } from "./runner.js";
-import { store, today, dateOf, clockStr, saleFood, saleToy, DIFF_NAME } from "../core/store.js";
+import { store, clockStr, saleFood, saleToy, DIFF_NAME } from "../core/store.js";
 import { FIELDS, ALL_FIELDS, TIER_NAME } from "../data/fields.js";
-import { HU_MAX, FUEL_FULL } from "../core/rules.js";
+import { HU_MAX, HA_MAX, FUEL_FULL } from "../core/rules.js";
 import { adultRow, alive } from "../core/creatures.js";
 
 const $ = id => document.getElementById(id);
@@ -27,6 +27,49 @@ function statusPanel(p) {
   return "<b>" + head + "</b><div>" + esc(p.name) + "</div>" +
     (p.stage === "adult" && !p.special ? "<div class=dim>" + TIER_NAME[p.tier] + " · đói " + adultRow(p)[1] + "′ · vui " + adultRow(p)[2] + "′</div>" : "") +
     "<div class=dim>Đời thứ " + p.gen + (p.genes.pure ? " · thuần chủng" : " · lai") + "</div>";
+}
+
+const STAGE = { egg:"Trứng", baby:"Em bé", kid:"Trẻ con", young:"Thiếu niên", adult:"Trưởng thành", dead:"Đã về với các vì sao" };
+
+const pips = (n, of, low) => "<div class='pips" + (low ? " low" : "") + "'>" +
+  Array.from({ length:of }, (_, i) => "<i class='" + (i < n ? "on" : "") + "'></i>").join("") + "</div>";
+
+/* The two numbers that decide whether the pet lives belong on screen, not behind a menu. */
+function vitals(p) {
+  if (!alive(p) || p.stage === "egg") return "";
+  const ha = Math.round(p.happy / (HA_MAX / HU_MAX));
+  return "<div class=vital><span>Đói</span>" + pips(p.hunger, HU_MAX, p.hunger <= 1) + "</div>" +
+    "<div class=vital><span>Vui</span>" + pips(ha, HU_MAX, ha <= 1) + "</div>" +
+    "<div class='vital flat'><span>Tuổi</span><b>" + Math.floor(p.age / 1440) + " năm</b></div>";
+}
+
+/* A dot on a tab means: there is something for you at that depth. */
+function attention(s, p) {
+  if (!alive(p)) return [false, false, p.stage === "dead", false];
+  return [
+    s.fuel >= FUEL_FULL,
+    p.poops.length > 0,
+    !!(p.calls.hunger || p.calls.happy || p.grim || p.injured || p.dirty || p.wiggle),
+    !!(p.sick || p.prompt),
+  ];
+}
+
+function updateShell(s) {
+  const start = ui.mode === "start" || !s;
+  const p = s && s.pet;
+  const sale = saleFood() ? " · giảm giá đồ ăn" : saleToy() ? " · giảm giá đồ chơi" : "";
+  setHtml("petName", start ? "Hành Tinh Bỏ Túi" : esc(p.stage === "egg" ? "Quả trứng" : p.name));
+  setHtml("petSub", start ? "Chọn nơi bé chào đời"
+    : esc(STAGE[p.stage] + " · " + FIELDS[p.field].name + (s.paused ? " · tạm dừng" : "") + sale));
+  setHidden("coins", start);
+  if (!start) setHtml("coins", s.gp + "G");
+
+  const v = start ? "" : vitals(p);
+  setHidden("vitals", !v);
+  if (v) setHtml("vitals", v);
+
+  const want = start ? [false, false, false, false] : attention(s, p);
+  document.querySelectorAll("#zoomTabs .dot").forEach((d, i) => { if (d.hidden === want[i]) d.hidden = !want[i]; });
 }
 
 export function updateHud(t) {
@@ -68,6 +111,5 @@ export function updateHud(t) {
   const showToast = ui.toast && t < ui.toast.until && ui.mode !== "menu";
   setHidden("hToast", !showToast);
   if (showToast) setHtml("hToast", esc(ui.toast.text));
-  if (s) setHtml("statusLine", dateOf(today()).toLocaleDateString("vi-VN") + " · " + clockStr() + " · " + s.gp + "G · " + s.speed + "×" +
-    (s.paused ? " · dừng" : "") + (saleFood() ? " · giảm giá đồ ăn" : saleToy() ? " · giảm giá đồ chơi" : ""));
+  updateShell(s);
 }

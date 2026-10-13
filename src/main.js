@@ -12,6 +12,7 @@ import { runPendingEvents } from "./ui/menus.js";
 import { renderScreen } from "./ui/screen.js";
 import { bindControls, startNew } from "./ui/input.js";
 import { initSheet, renderBars, closeSheet } from "./ui/sheet.js";
+import { initCoach, startCoach, coachSeen } from "./ui/coach.js";
 import { initCloud } from "./ui/cloudpanel.js";
 
 const $ = id => document.getElementById(id);
@@ -37,7 +38,23 @@ function syncControls() {
   document.querySelectorAll("#zoomList li").forEach(li => li.classList.toggle("on", live && +li.dataset.z === ui.zoom));
 }
 
-/* ---------- side panel ---------- */
+/* ---------- settings and the rule book ---------- */
+function openDoc(which) {
+  $("docTitle").textContent = which === "set" ? "Cài đặt" : "Sổ tay";
+  $("docSettings").hidden = which !== "set";
+  $("docManual").hidden = which === "set";
+  $("docSheet").hidden = false;
+  $("docSheet").querySelector(".docbody").scrollTop = 0;
+}
+const closeDoc = () => { $("docSheet").hidden = true; };
+$("helpBtn").addEventListener("click", () => openDoc("help"));
+$("setBtn").addEventListener("click", () => openDoc("set"));
+$("docClose").addEventListener("click", closeDoc);
+$("docSheet").addEventListener("click", e => { if (e.target.id === "docSheet") closeDoc(); });
+$("coachBtn").addEventListener("click", () => { closeDoc(); startCoach(true); });
+initCoach();
+
+/* ---------- settings controls ---------- */
 document.querySelectorAll("#speedSeg button").forEach(b => b.addEventListener("click", () => { if (store.state) { store.state.speed = +b.dataset.s; save(localStorage); } }));
 $("pauseBtn").addEventListener("click", () => { if (store.state) { store.state.paused = !store.state.paused; save(localStorage); } });
 $("soundBtn").addEventListener("click", () => { if (store.state) { store.state.sound = !store.state.sound; save(localStorage); } });
@@ -63,7 +80,7 @@ bindControls(hooks);
 initSheet(hooks);
 
 /* ---------- loop ---------- */
-let lastT = performance.now(), acc = 0, lastSave = 0;
+let lastT = performance.now(), acc = 0, lastSave = 0, coachTried = coachSeen();
 function frame(t) {
   const dt = Math.min(t - lastT, 1000);
   lastT = t;
@@ -81,6 +98,7 @@ function frame(t) {
   renderScreen(t);
   syncControls();
   renderBars();
+  if (!coachTried && s && ui.mode === "main" && $("gate").hidden && $("docSheet").hidden) { coachTried = true; startCoach(); }
   requestAnimationFrame(frame);
 }
 

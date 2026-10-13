@@ -10,6 +10,7 @@ import { store } from "../core/store.js";
 import { contextMenu, openLab } from "./menus.js";
 import { gamePad, quitGame } from "./runner.js";
 import { ALL_FIELDS, FIELDS } from "../data/fields.js";
+import { buzz } from "./sound.js";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
@@ -36,11 +37,12 @@ export function initSheet(h) {
   hooks = h;
   $("acts").addEventListener("click", e => {
     const b = e.target.closest("button");
-    if (b && !b.disabled) acts[+b.dataset.i]?.fn();
+    if (b && !b.disabled) { buzz(); acts[+b.dataset.i]?.fn(); }
   });
   $("sheetItems").addEventListener("click", e => {
     const b = e.target.closest("button");
     if (!b || b.disabled) return;
+    buzz();
     topMenu()?.items[+b.dataset.i]?.fn();
   });
   $("sheetBack").addEventListener("click", back);

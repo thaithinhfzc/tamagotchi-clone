@@ -1,75 +1,90 @@
-/* Layout: the toy sits on a pale shelf as the hero; a slim manual card beside it (stacks under it on phones). */
+/* A phone game, not a web page: the app owns the viewport, nothing scrolls behind it, and every
+   rule of the game lives in a sheet you open from inside rather than in a column underneath. */
 :root{
   --bg:#e8edf1; --surface:#f8fafc; --ink:#20243a; --muted:#5b6378; --line:#d2d9e1; --accent:#c93b6c; --chip:#eef1f6; --est:#8a5a00;
+  --ok:#2e9e5b; --warn:#e0892a; --bad:#d8453f;
   --display:"Baloo 2","Be Vietnam Pro",system-ui,sans-serif;
   --body:"Be Vietnam Pro",system-ui,-apple-system,sans-serif;
   --pixel:"VT323",ui-monospace,Menlo,monospace;
+  --pad:max(12px,env(safe-area-inset-left,0px));
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121624;--surface:#1a2032;--ink:#e7eaf3;--muted:#9aa3b8;--line:#2b3348;--accent:#ff7aa6;--chip:#232a3f;--est:#f0c060;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#121624;--surface:#1a2032;--ink:#e7eaf3;--muted:#9aa3b8;--line:#2b3348;--accent:#ff7aa6;--chip:#232a3f;--est:#f0c060;color-scheme:dark}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121624;--surface:#1a2032;--ink:#e7eaf3;--muted:#9aa3b8;--line:#2b3348;--accent:#ff7aa6;--chip:#232a3f;--est:#f0c060;--ok:#4cc77e;--warn:#f0a54a;--bad:#ff6b6b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121624;--surface:#1a2032;--ink:#e7eaf3;--muted:#9aa3b8;--line:#2b3348;--accent:#ff7aa6;--chip:#232a3f;--est:#f0c060;--ok:#4cc77e;--warn:#f0a54a;--bad:#ff6b6b;color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%}
 /* The `hidden` attribute only works through the browser's default stylesheet, and any rule of
    ours outranks that — `#gate{display:grid}` silently kept the sign-in overlay on screen for
    good. Anything given a `display` here must not be able to ignore being hidden. */
 [hidden]{display:none!important}
-.wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:28px 48px;display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:40px;align-items:start}
-@media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr);gap:28px}}
-.stage{display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0;position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}
-@media (max-width:860px){.stage{position:static}}
+button{font:inherit;color:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
-/* ---------- the app ----------
-   No plastic shell, no dial, no A/B/C: the screen itself is the control. The field tints the
-   frame and the controls so the planet still reads at a glance. */
+/* ---------- app shell ---------- */
 .app{--fa:#a8dcff;--fb:#3b86d6;--fc:#1f5fa8;
-  width:min(430px,100%);display:grid;gap:10px}
+  height:100dvh;max-width:480px;margin:0 auto;display:grid;gap:10px;
+  grid-template-rows:repeat(5,auto);align-content:safe center;
+  padding:max(8px,env(safe-area-inset-top,0px)) var(--pad) max(8px,env(safe-area-inset-bottom,0px));
+  user-select:none;-webkit-user-select:none}
 .app[data-field="land"]{--fa:#ffc6da;--fb:#e5688f;--fc:#a93a62}
 .app[data-field="sky"]{--fa:#ddd0ff;--fb:#8b6be0;--fc:#5a40aa}
-.screen{position:relative;aspect-ratio:96/80;container-type:inline-size;overflow:hidden;
-  border-radius:14px;background:#000;cursor:pointer;
+
+.top{display:flex;align-items:center;gap:10px;min-width:0}
+.who{min-width:0;flex:1;display:grid;line-height:1.2}
+.who b{font-family:var(--display);font-size:1.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who span{font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topright{display:flex;align-items:center;gap:6px;flex:none}
+.coin{font-family:var(--pixel);font-size:1.15rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.icon{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--chip);
+  cursor:pointer;font-size:1rem;display:grid;place-items:center}
+.icon:active{transform:scale(.93)}
+.icon:focus-visible,button:focus-visible{outline:2px solid var(--fb);outline-offset:2px}
+
+/* ---------- vitals ---------- */
+.vitals{display:flex;gap:8px}
+.vital{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+.vital span{display:block;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pips{display:flex;gap:3px;margin-top:4px}
+.pips i{flex:1;height:8px;border-radius:3px;background:var(--line)}
+.pips i.on{background:var(--ok)}
+.pips.low i.on{background:var(--bad)}
+.vital.flat{display:grid;align-content:center;text-align:center}
+.vital.flat b{font-family:var(--display);font-size:1rem;line-height:1.1}
+
+/* ---------- the screen ---------- */
+/* The width drives the size and aspect-ratio derives the height. Pinning the height instead
+   and clamping with max-width silently broke the 96:80 ratio and stretched the pixel art. The
+   dvh term is what keeps the toy from crowding out the buttons on a short screen. */
+.screen{position:relative;width:min(100%,56dvh);aspect-ratio:96/80;margin-inline:auto;
+  container-type:inline-size;overflow:hidden;border-radius:14px;background:#000;cursor:pointer;
   /* the canvas is a drag surface: let the browser hand us every move instead of scrolling */
-  touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  touch-action:none;-webkit-tap-highlight-color:transparent;
   box-shadow:0 0 0 3px var(--fb),0 10px 26px rgba(20,30,60,.26)}
 .screen canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
 
 .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.tabs button{font:600 .85rem/1 var(--body);min-height:42px;padding:8px 2px;cursor:pointer;
+.tabs button{position:relative;font:600 .85rem/1 var(--body);min-height:42px;padding:8px 2px;cursor:pointer;
   border:1px solid var(--line);border-radius:10px;background:var(--chip);color:var(--muted)}
 .tabs button[aria-pressed="true"]{background:var(--fb);border-color:var(--fb);color:#fff}
 .tabs button[disabled]{opacity:.35;cursor:default}
-.tabs button:focus-visible{outline:2px solid var(--fb);outline-offset:2px}
+.tabs .dot{position:absolute;top:5px;right:6px;width:9px;height:9px;border-radius:50%;
+  background:var(--bad);box-shadow:0 0 0 2px var(--chip);animation:pulse 1.4s ease-in-out infinite}
+.tabs button[aria-pressed="true"] .dot{box-shadow:0 0 0 2px var(--fb)}
+@keyframes pulse{50%{transform:scale(.72);opacity:.7}}
 
 /* Whatever you can do right now, one tap away. Two per row so the labels stay readable. */
-.acts{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;align-content:start}
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-content:start;max-height:38dvh;
+  overflow-y:auto;overscroll-behavior:contain;padding-bottom:2px}
 .acts button{flex:1 1 calc(50% - 4px);min-width:0;min-height:48px;padding:10px 12px;cursor:pointer;
   font:600 .95rem/1.2 var(--body);text-align:left;
   border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink)}
 .acts button.primary{background:var(--fb);border-color:var(--fb);color:#fff}
 .acts button.wide{flex-basis:100%}
 .acts button.quiet{color:var(--muted);background:var(--chip)}
+.acts button.urgent{border-color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
 .acts button[disabled]{opacity:.45;cursor:default}
-.acts button:focus-visible{outline:2px solid var(--fb);outline-offset:2px}
-
-/* ---------- bottom sheet: anything deeper than the action row ---------- */
-.sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;
-  background:rgba(10,12,24,.45)}
-.sheetbox{width:min(520px,100%);max-height:78vh;display:grid;grid-template-rows:auto minmax(0,1fr);
-  background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:18px 18px 0 0;
-  padding-bottom:env(safe-area-inset-bottom,0px)}
-.sheethead{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;
-  gap:4px;padding:6px;border-bottom:1px solid var(--line)}
-.sheethead b{font-family:var(--display);font-size:1rem;text-align:center;min-width:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sheetnav{width:44px;height:44px;border:0;background:none;color:var(--muted);cursor:pointer;
-  font-size:1.3rem;line-height:1;border-radius:10px}
-.sheetnav:focus-visible{outline:2px solid var(--fb);outline-offset:-2px}
-.sheetitems{overflow:auto;-webkit-overflow-scrolling:touch;padding:8px;display:grid;gap:6px;align-content:start}
-.sheetitems button{min-height:50px;padding:13px 14px;text-align:left;cursor:pointer;
-  font:500 .98rem/1.3 var(--body);color:var(--ink);
-  border:1px solid var(--line);border-radius:12px;background:var(--chip)}
-.sheetitems button.sel{border-color:var(--fb);box-shadow:inset 0 0 0 1px var(--fb)}
-.sheetitems button[disabled]{opacity:.45;cursor:default}
-.sheetitems .line{padding:9px 14px;font-size:.95rem;border-bottom:1px solid var(--line)}
-.sheetitems .line:last-child{border-bottom:0}
+.acts button:active:not([disabled]){transform:scale(.98)}
 
 /* ---------- in-screen HUD ---------- */
 .hud{position:absolute;inset:0;pointer-events:none;font-family:var(--pixel);color:#fff;font-size:7.2cqw;line-height:.95}
@@ -81,41 +96,91 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15p
 .ic{display:inline-block;margin-left:1.5cqw}
 .ic.call{color:#ffd34d}.ic.sick{color:#7ef07a}.ic.grim{color:#ff6b6b}
 .panel{position:absolute;background:#fdf6e3;color:#2a2238;border:1cqw solid #2a2238;border-radius:2.5cqw;
-  box-shadow:1.2cqw 1.2cqw 0 rgba(10,8,30,.45);text-shadow:none}
-.panel{left:4cqw;right:4cqw;top:9cqw;padding:1.4cqw 2.6cqw;font-size:6.2cqw}
+  box-shadow:1.2cqw 1.2cqw 0 rgba(10,8,30,.45);text-shadow:none;
+  left:4cqw;right:4cqw;top:9cqw;padding:1.4cqw 2.6cqw;font-size:6.2cqw}
 .panel b{display:block;font-weight:400;color:#c93b6c;margin-bottom:.4cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .panel .row{display:flex;justify-content:space-between;gap:2cqw;white-space:nowrap}
-.panel .warn{color:#b42318;margin-top:.4cqw}
 .panel .dim{opacity:.6}
 .panel.ghost{background:rgba(253,246,227,.92)}
 .toast{position:absolute;left:50%;bottom:11cqw;transform:translateX(-50%);width:max-content;max-width:90%;
   background:#fff;color:#2a2238;border:.9cqw solid #2a2238;border-radius:2.5cqw;padding:1.2cqw 2.6cqw;
   text-align:center;text-shadow:none;font-size:6.4cqw;line-height:1}
 
-/* ---------- manual card ---------- */
-.manual{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px 26px;min-width:0;
-  display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
-.manual h1{font-family:var(--display);font-weight:800;font-size:2.3rem;line-height:1.05;margin:0;text-wrap:balance}
-.lede{color:var(--muted);margin:.4rem 0 0;max-width:62ch}
-.manual h2{font-family:var(--display);font-weight:700;font-size:1.05rem;margin:0 0 8px;letter-spacing:.01em}
-.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
-.keys dt{font-family:var(--pixel);font-size:1.15rem;line-height:1.3;background:var(--chip);border:1px solid var(--line);
-  border-radius:6px;padding:0 8px;white-space:nowrap;justify-self:start}
-.keys dd{margin:0;min-width:0}
-.zooms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0;padding:0;list-style:none}
-@media (max-width:480px){.zooms{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.zooms li{background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.86rem;min-width:0}
+/* ---------- bottom sheets ---------- */
+.sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(10,12,24,.45)}
+.sheetbox{width:min(520px,100%);max-height:78dvh;display:grid;grid-template-rows:auto minmax(0,1fr);
+  background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:18px 18px 0 0;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheetbox.tall{max-height:92dvh;height:92dvh}
+.sheethead{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;
+  gap:4px;padding:6px;border-bottom:1px solid var(--line)}
+.sheethead b{font-family:var(--display);font-size:1rem;text-align:center;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheetnav{width:44px;height:44px;border:0;background:none;color:var(--muted);cursor:pointer;
+  font-size:1.3rem;line-height:1;border-radius:10px}
+.sheetitems{overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:8px;display:grid;gap:6px;align-content:start}
+.sheetitems button{min-height:50px;padding:13px 14px;text-align:left;cursor:pointer;
+  font:500 .98rem/1.3 var(--body);
+  border:1px solid var(--line);border-radius:12px;background:var(--chip)}
+.sheetitems button.sel{border-color:var(--fb);box-shadow:inset 0 0 0 1px var(--fb)}
+.sheetitems button[disabled]{opacity:.45;cursor:default}
+.sheetitems button:active:not([disabled]){transform:scale(.99)}
+.sheetitems .line{padding:9px 14px;font-size:.95rem;border-bottom:1px solid var(--line)}
+.sheetitems .line:last-child{border-bottom:0}
+
+/* ---------- settings + rule book ---------- */
+.docbody{overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 16px 24px;user-select:text}
+.docbody h2{font-family:var(--display);font-weight:700;font-size:1rem;margin:18px 0 8px}
+.docbody h2:first-child{margin-top:0}
+.docbody details{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--chip)}
+.docbody summary{font-family:var(--display);font-weight:700;font-size:.98rem;padding:12px 14px;cursor:pointer;
+  list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:46px}
+.docbody summary::-webkit-details-marker{display:none}
+.docbody summary::after{content:"▾";color:var(--muted);transition:transform .15s}
+.docbody details[open] summary::after{transform:rotate(180deg)}
+.docbody details>*:not(summary){padding:0 14px 12px}
+.lede{color:var(--muted);margin:0 0 14px}
+.note{font-size:.86rem;color:var(--muted);margin:8px 0 0}
+.keys{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;margin:0}
+.keys dt{font-weight:600;white-space:nowrap}
+.keys dd{margin:0;min-width:0;color:var(--muted)}
+.zooms{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.zooms li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.86rem}
 .zooms li strong{display:block;font-family:var(--display);font-size:.95rem}
 .zooms li.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tips{margin:0;padding-left:1.1rem;display:grid;gap:6px;font-size:.92rem}
+.gap{margin:0;padding-left:1.1rem;display:grid;gap:5px;color:var(--muted);font-size:.92rem}
+.est{color:var(--est);font-size:.82em;font-weight:600;white-space:nowrap}
+.tablewrap{overflow-x:auto}
+table.num{border-collapse:collapse;font-size:.84rem;font-variant-numeric:tabular-nums;min-width:420px}
+table.num th,table.num td{border-bottom:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+table.num th{font-family:var(--display);font-weight:700}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
 .seg button,.plain{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--chip);color:var(--ink);
-  border-radius:999px;padding:5px 13px;cursor:pointer}
+  border-radius:999px;padding:9px 14px;min-height:40px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-.seg button:focus-visible,.plain:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.plain.danger{color:var(--accent)}
+.plain.danger{color:var(--bad)}
+.plain.primary{background:var(--fb);border-color:var(--fb);color:#fff}
 .plain[disabled]{opacity:.5;cursor:default}
+
+/* ---------- first-run walkthrough ---------- */
+#coach{position:fixed;inset:0;z-index:60;background:rgba(8,10,20,.72)}
+/* a ring instead of a mask: it points without hiding what it points at */
+.coachring{position:absolute;border:3px solid var(--fb);border-radius:14px;
+  box-shadow:0 0 0 9999px rgba(8,10,20,.0),0 0 18px var(--fb);transition:all .22s ease}
+.coachbox{position:absolute;left:50%;transform:translateX(-50%);width:min(430px,calc(100% - 24px));
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.coachbox p{margin:0 0 12px;font-size:.98rem}
+.coachfoot{display:flex;align-items:center;gap:8px}
+.coachdots{flex:1;display:flex;gap:5px}
+.coachdots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.coachdots i.on{background:var(--fb)}
+
+/* ---------- sign-in gate ---------- */
 #gate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;align-content:center;
-  padding:24px max(16px,env(safe-area-inset-left,0px));overflow:auto;-webkit-overflow-scrolling:touch;
+  padding:24px var(--pad);overflow:auto;-webkit-overflow-scrolling:touch;
   background:color-mix(in srgb,var(--bg,#fbfbfd) 92%,transparent);backdrop-filter:blur(6px)}
 .gatebox{max-width:40ch;text-align:center;display:grid;gap:10px;justify-items:center}
 .gatebox h1{font-family:var(--display);font-size:1.5rem;margin:0}
@@ -126,29 +191,12 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15p
   font:600 1rem/1 var(--body);color:#1f1f1f;background:#fff;
   border:1px solid #747775;border-radius:999px;padding:12px 22px;min-height:44px}
 .gsi svg{width:19px;height:19px;flex:none}
-.gsi:hover{background:#f3f3f3}
-.gsi:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .gsi[disabled]{opacity:.6;cursor:default}
-.note{font-size:.86rem;color:var(--muted);margin:6px 0 0;max-width:62ch}
-.tips{margin:0;padding-left:1.1rem;display:grid;gap:5px}
-.tips li{max-width:66ch}
-.est{color:var(--est);font-size:.82em;font-weight:600;white-space:nowrap}
-.tablewrap{overflow-x:auto}
-table.num{border-collapse:collapse;font-size:.86rem;font-variant-numeric:tabular-nums;min-width:440px}
-table.num th,table.num td{border-bottom:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
-table.num th{font-family:var(--display);font-weight:700}
-.gap{margin:0;padding-left:1.1rem;display:grid;gap:4px;color:var(--muted);font-size:.92rem}
-.status-line{font-family:var(--pixel);font-size:1.2rem;color:var(--muted);font-variant-numeric:tabular-nums;
-  display:flex;flex-wrap:wrap;justify-content:center;gap:0 .6em;line-height:1.3;min-height:1.3em}
-@media (prefers-reduced-motion:reduce){.blink{animation:none}}
 
-/* phone portrait: the panel's 26px side padding and the 2.3rem title are sized for a column,
-   not for a 390px screen */
-@media (max-width:560px){
-  .wrap{padding-block:18px 36px;gap:22px}
-  .manual{padding:18px 16px;gap:18px;border-radius:14px}
-  .manual h1{font-size:1.75rem}
-  .keys{grid-template-columns:auto minmax(0,1fr);gap:5px 10px}
-  .seg button,.plain{padding:6px 12px}
-  .gatebox h1{font-size:1.35rem}
+@media (prefers-reduced-motion:reduce){.blink,.tabs .dot{animation:none}.coachring{transition:none}}
+@media (max-height:680px){
+  .vitals{display:none}                 /* a short screen keeps the toy, not the dashboard */
+  .app{gap:8px}
+  .who b{font-size:1rem}
+  .screen{width:min(100%,46dvh)}
 }

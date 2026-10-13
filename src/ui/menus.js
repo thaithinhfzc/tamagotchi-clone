@@ -30,22 +30,22 @@ export function openMenu() { const m = contextMenu(); if (m.items.length) sub(m)
 function cellMenu() {
   const p = S().pet;
   const items = [];
-  if (p.prompt) items.push({ label:"Tiến hoá ngay!", fn:() => { closeMenu(); evolveKid(p.prompt.field); } });
-  if (p.sick) items.push({ label:"Diệt vi khuẩn (" + p.viruses + ")", fn:() => act(A.tapVirus) });
+  if (p.prompt) items.push({ label:"Tiến hoá ngay!", cls:"wide primary", fn:() => { closeMenu(); evolveKid(p.prompt.field); } });
+  if (p.sick) items.push({ label:"Diệt vi khuẩn (" + p.viruses + ")", cls:"urgent", fn:() => act(A.tapVirus) });
   if (alive(p)) items.push({ label:"Chỉ số của bé", fn:() => { closeMenu(); ui.statusPage = (ui.statusPage + 1) % 3; } });
   return { title:"TẾ BÀO", items };
 }
 
 function tamaMenu() {
   const p = S().pet;
-  if (p.stage === "dead") return { title:"VỀ VỚI CÁC VÌ SAO", items:[{ label:"Ấp quả trứng mới", fn:() => { act(A.newEggAfterDeath); ui.walkers = null; } }] };
+  if (p.stage === "dead") return { title:"VỀ VỚI CÁC VÌ SAO", items:[{ label:"Ấp quả trứng mới", cls:"wide primary", fn:() => { act(A.newEggAfterDeath); ui.walkers = null; } }] };
   if (p.stage === "egg") return { title:"TRỨNG", items:[] };
-  if (p.grim) return { title:"THẦN CHẾT!", items:[{ label:"Đuổi nó đi!", fn:() => act(A.scareGrim) }] };
-  if (p.injured) return { title:p.name.toUpperCase(), items:[{ label:"Băng bó (" + p.injured + ")", fn:() => act(A.tendInjury) }] };
+  if (p.grim) return { title:"THẦN CHẾT!", items:[{ label:"Đuổi nó đi!", cls:"wide urgent", fn:() => act(A.scareGrim) }] };
+  if (p.injured) return { title:p.name.toUpperCase(), items:[{ label:"Băng bó (" + p.injured + ")", cls:"wide urgent", fn:() => act(A.tendInjury) }] };
   const items = [
     { label:"Cho ăn", fn:() => sub({ title:"CHO ĂN", items:[{ label:"Đồ ăn", fn:foodMenu }, { label:"Đồ ăn vặt", fn:snackMenu }] }) },
     { label:"Chơi", fn:() => sub({ title:"CHƠI", items:PLAY_GAMES.map(g => ({ label:g.name, fn:() => startGame(g.id) })) }) },
-    { label:"Tắm cho bé" + (p.dirty ? " !" : ""), fn:() => act(A.bathe) },
+    { label:"Tắm cho bé", cls:p.dirty ? "urgent" : "", fn:() => act(A.bathe) },
   ];
   if (A.canSleepNow()) items.push({ label:"Cho đi ngủ", fn:() => act(A.putToSleep) });
   if (A.canWakeNow()) items.push({ label:"Đánh thức", fn:() => act(A.wakeUp) });
@@ -73,7 +73,7 @@ function fieldMenu() {
     unlocked("toys") ? { label:"Đồ chơi ngoài trời", fn:toyMenu } : lockItem("Đồ chơi ngoài trời", UNLOCK.toys),
     unlocked("hunt") ? { label:"Săn trứng", fn:() => sub({ title:"ĐI ĐÂU?", items:[
       { label:"Núi lửa", fn:() => act(() => A.startHunt("volcano")) }, { label:"Suối", fn:() => act(() => A.startHunt("spring")) }] }) } : lockItem("Săn trứng", UNLOCK.hunt),
-    { label:"Dọn phân (" + p.poops.length + ")", fn:() => act(A.cleanPoop) },
+    { label:"Dọn phân (" + p.poops.length + ")", cls:p.poops.length ? "urgent" : "", fn:() => act(A.cleanPoop) },
     unlocked("switchField") ? { label:"Đổi vùng", fn:() => sub({ title:"ĐỔI VÙNG", items:ALL_FIELDS.map(f => fieldsOpen().includes(f)
       ? { label:FIELDS[f].name + (f === p.field ? " ●" : ""), fn:() => act(() => A.setField(f)) }
       : { label:FIELDS[f].name + " (khoá)", dis:true, fn:() => toast("Chưa mở") }) }) } : lockItem("Đổi vùng", UNLOCK.switchField),

@@ -20,3 +20,6 @@ export const callBeep = () => [0, 120, 240].forEach(d => setTimeout(() => beep(1
 export const good = () => beep(1175, 0.06);
 export const bad = () => beep(260, 0.1);
 export const click = dial => beep(dial ? 1500 : 1200, 0.02);
+
+/* A short tick under the finger. Desktop and iOS Safari ignore it; nothing depends on it. */
+export const buzz = (ms = 8) => { try { navigator.vibrate?.(ms); } catch { /* not allowed here */ } };
