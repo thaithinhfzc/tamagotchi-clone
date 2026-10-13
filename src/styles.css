@@ -81,6 +81,7 @@ button{font:inherit;color:inherit;touch-action:manipulation;-webkit-tap-highligh
   border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink)}
 .acts button.primary{background:var(--fb);border-color:var(--fb);color:#fff}
 .acts button.wide{flex-basis:100%}
+.acts button.third{flex-basis:calc(33.333% - 6px);text-align:center;padding-inline:4px}
 .acts button.quiet{color:var(--muted);background:var(--chip)}
 .acts button.urgent{border-color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
 .acts button[disabled]{opacity:.45;cursor:default}

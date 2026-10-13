@@ -54,22 +54,31 @@ function attention(s, p) {
   ];
 }
 
-function updateShell(s) {
-  const start = ui.mode === "start" || !s;
-  const p = s && s.pet;
-  const sale = saleFood() ? " · giảm giá đồ ăn" : saleToy() ? " · giảm giá đồ chơi" : "";
-  setHtml("petName", start ? "Hành Tinh Bỏ Túi" : esc(p.stage === "egg" ? "Quả trứng" : p.name));
-  setHtml("petSub", start ? "Chọn nơi bé chào đời"
-    : esc(STAGE[p.stage] + " · " + FIELDS[p.field].name + (s.paused ? " · tạm dừng" : "") + sale));
-  setHidden("coins", start);
-  if (!start) setHtml("coins", s.gp + "G");
+const dots = want => document.querySelectorAll("#zoomTabs .dot")
+  .forEach((d, i) => { if (d.hidden === want[i]) d.hidden = !want[i]; });
 
-  const v = start ? "" : vitals(p);
+/* Before a pet exists there is no clock, so nothing here may touch the save until it is proven
+   to be there — a single unguarded read (saleFood) threw every frame and left a new player
+   staring at a black screen with no buttons. The early return is the guarantee. */
+function updateShell(s) {
+  if (ui.mode === "start" || !s) {
+    setHtml("petName", "Hành Tinh Bỏ Túi");
+    setHtml("petSub", "Chọn nơi bé chào đời");
+    setHidden("coins", true);
+    setHidden("vitals", true);
+    return dots([false, false, false, false]);
+  }
+  const p = s.pet;
+  const sale = saleFood() ? " · giảm giá đồ ăn" : saleToy() ? " · giảm giá đồ chơi" : "";
+  setHtml("petName", esc(p.stage === "egg" ? "Quả trứng" : p.name));
+  setHtml("petSub", esc(STAGE[p.stage] + " · " + FIELDS[p.field].name + (s.paused ? " · tạm dừng" : "") + sale));
+  setHidden("coins", false);
+  setHtml("coins", s.gp + "G");
+
+  const v = vitals(p);
   setHidden("vitals", !v);
   if (v) setHtml("vitals", v);
-
-  const want = start ? [false, false, false, false] : attention(s, p);
-  document.querySelectorAll("#zoomTabs .dot").forEach((d, i) => { if (d.hidden === want[i]) d.hidden = !want[i]; });
+  dots(attention(s, p));
 }
 
 export function updateHud(t) {
@@ -99,6 +108,8 @@ export function updateHud(t) {
       if (gameKind() === "lab" && !ui.game.event) TL = DIFF_NAME[ui.game.diff];
     }
     if (ui.mode === "anim" && ui.anim.type === "travel") { BL = ui.anim.pl.n; BR = ""; }
+    // the egg has no actions at all, so without this the first five minutes look like a bug
+    if (main && p.stage === "egg") BL = "Trứng đang ấp…";
     if (main && p.grim && ui.zoom === 2) BL = "Chạm vào thần chết!";
     if (main && p.wiggle && (ui.zoom === 1 || ui.zoom === 2)) BL = "Sắp ị! Chạm vào bé!";
     if (main && p.injured && ui.zoom === 2) BL = "Chạm để băng bó (" + p.injured + ")";

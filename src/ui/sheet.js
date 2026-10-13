@@ -54,7 +54,7 @@ export function initSheet(h) {
 /* ---------- the action row ---------- */
 function buildActs() {
   if (ui.mode === "start") return [
-    ...ALL_FIELDS.map((f, i) => ({ label:FIELDS[f].name, cls:ui.startSel === i ? "primary" : "",
+    ...ALL_FIELDS.map((f, i) => ({ label:FIELDS[f].name, cls:"third" + (ui.startSel === i ? " primary" : ""),
       fn:() => { ui.startSel = i; hooks.onFieldPreview(f); } })),
     { label:"Egg Bang! Bắt đầu", cls:"wide primary", fn:() => hooks.onStart(ALL_FIELDS[ui.startSel]) },
   ];
