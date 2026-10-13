@@ -1,8 +1,15 @@
 // Shared pieces for mini games.
 //
-// A game module exports { id, name, kind:"play"|"lab", setup(G, t), input(G, a, t), update(G, t, dt), draw(G, t), hud(G, t) }.
+// A game module exports { id, name, kind:"play"|"lab", setup(G, t), input(G, a, t), update(G, t, dt), draw(G, t), hud(G, t) }
+// plus, for touch, an optional tap(G, x, y, t, phase) and an optional pad.
 //   G       – per-run state object; the runner fills G.t0, G.last, G.diff (1–3), G.event, G.pet
-//   input   – a ∈ "L" "R" "A" "B" "C" "AB"
+//   input   – a ∈ "L" "R" "A" "B" "C" "AB"; the keyboard path, and what pad buttons send
+//   tap     – a finger on the screen at canvas pixel (x, y). `phase` is "down" | "move" | "up":
+//             steering games follow all three, picking games act on "down" so a drag cannot pick,
+//             and Lau bụi aims while held and fires on "up".
+//             Return the same sound hints as `input`. Most games need nothing else.
+//   pad     – [{ label, a, cls? }] buttons for choices that are not a place on the screen
+//             (only Flags needs this: "both flags" is not somewhere you can point at)
 //   update  – returns undefined while running, or an outcome:
 //               play games: { win, perfect, add, msg }   (happiness reward)
 //               lab games:  { stars }                     (0–3, Gotchi Points)

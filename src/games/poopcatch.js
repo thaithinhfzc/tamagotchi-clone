@@ -14,6 +14,7 @@ export default {
     if (a === "L" || a === "A") G.y = clamp(G.y - 1, 0, 3);
     if (a === "R" || a === "B") G.y = clamp(G.y + 1, 0, 3);
   },
+  tap(G, x, y) { G.y = clamp(Math.round((y - 36) / 13), 0, 3); },
   update(G, t, dt) {
     if (t >= G.next) { G.items.push({ x:100, lane:ri(0, 3), kind:random() < 0.08 ? "vac" : "poop" }); G.next = t + rnd(380, 700) / (0.7 + G.diff * 0.3); }
     let ev;
@@ -38,5 +39,5 @@ export default {
     drawAt(shiroSprite(), 14, laneY(G.y) + 1, 1);
     if (t < G.vacUntil) rect(0, 0, W, 2, "#5ab0f0");
   },
-  hud(G, t) { return { BL:"◀ ▶ lên xuống", BR:secondsLeft(G, t) + " · " + G.score }; },
+  hud(G, t) { return { BL:"Kéo lên xuống", BR:secondsLeft(G, t) + " · " + G.score }; },
 };

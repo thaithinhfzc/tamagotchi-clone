@@ -20,6 +20,7 @@ export default {
     if (a === "R" || a === "B") G.x += 6;
     G.x = (G.x + W) % W;
   },
+  tap(G, x) { G.x = (x + W) % W; },
   update(G, t, dt) {
     G.vy += 140 * dt; G.y += G.vy * dt;
     let ev;
@@ -43,5 +44,5 @@ export default {
     }
     drawAt(iconSprite("vitamin"), G.x, G.y, 2);
   },
-  hud(G, t) { return { BL:"◀ ▶", BR:secondsLeft(G, t) + " · " + height(G) + "m" }; },
+  hud(G, t) { return { BL:"Kéo ngang", BR:secondsLeft(G, t) + " · " + height(G) + "m" }; },
 };

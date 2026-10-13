@@ -24,34 +24,29 @@
     </div>
   </div>
 
-  <section class="stage" aria-label="Máy nuôi thú ảo">
-    <div class="device" id="device" data-shell="water">
-      <div class="brand">hành tinh bỏ túi</div>
-      <div class="dial" id="dial" title="Núm xoay: zoom và chọn. Bấm giữa núm: Lab">
-        <button class="dl" id="dialL" aria-label="Xoay núm sang trái"></button>
-        <button class="dr" id="dialR" aria-label="Xoay núm sang phải"></button>
-        <button class="cap" id="dialCap" aria-label="Bấm núm: mở Lab"></button>
-      </div>
-      <div class="dial-hint">◀ ▶<br>bấm: LAB</div>
-      <div class="bezel">
-        <div class="screen">
-          <canvas id="cv" width="96" height="80"></canvas>
-          <div class="hud">
-            <div class="hud-top"><span id="hTL"></span><span id="hTR"></span></div>
-            <div class="hud-bot"><span id="hBL"></span><span id="hBR"></span></div>
-            <div class="panel" id="hPanel" hidden></div>
-            <div class="menu" id="hMenu" hidden></div>
-            <div class="toast" id="hToast" hidden></div>
-          </div>
+  <section class="stage" aria-label="Hành tinh của bạn">
+    <div class="app" id="app" data-field="water">
+      <div class="status-line" id="statusLine">&nbsp;</div>
+
+      <div class="screen" id="screen">
+        <canvas id="cv" width="96" height="80"></canvas>
+        <div class="hud">
+          <div class="hud-top"><span id="hTL"></span><span id="hTR"></span></div>
+          <div class="hud-bot"><span id="hBL"></span><span id="hBR"></span></div>
+          <div class="panel" id="hPanel" hidden></div>
+          <div class="toast" id="hToast" hidden></div>
         </div>
       </div>
-      <div class="btns">
-        <button class="btn" data-a="A" aria-label="Nút A: chọn, mở menu">A</button>
-        <button class="btn" data-a="B" aria-label="Nút B: xác nhận">B</button>
-        <button class="btn" data-a="C" aria-label="Nút C: quay lại">C</button>
-      </div>
+
+      <nav class="tabs" id="zoomTabs" aria-label="Tầng zoom">
+        <button data-z="0">Vũ trụ</button>
+        <button data-z="1">Vùng</button>
+        <button data-z="2">Bé</button>
+        <button data-z="3">Tế bào</button>
+      </nav>
+
+      <div class="acts" id="acts"></div>
     </div>
-    <div class="status-line" id="statusLine">&nbsp;</div>
   </section>
 
   <aside class="manual">
@@ -62,12 +57,13 @@
 
     <div>
       <h2>Điều khiển</h2>
+      <p class="lede">Chạm thẳng vào thứ bạn muốn. Không có nút giả nào phải học thuộc.</p>
       <dl class="keys">
-        <dt>◀ ▶ / Q E</dt><dd>Xoay núm: đổi tầng zoom, chọn trong menu, điều khiển trong trò chơi.</dd>
-        <dt>Bấm núm / V</dt><dd>Mở Lab: thông tin, nhiệm vụ, trò kiếm xu, cửa hàng, trợ giúp, sổ tay.</dd>
-        <dt>A / Z</dt><dd>Mở menu, chọn. Trong trò Mũi tên: bên trái. Trong trò Cờ: cờ trắng.</dd>
-        <dt>B / X / Enter</dt><dd>Xác nhận. Trong trò Mũi tên: bên phải. Trong trò Cờ: cờ đỏ.</dd>
-        <dt>C / Esc</dt><dd>Quay lại. Bấm A và B cùng lúc để giơ cả hai cờ.</dd>
+        <dt>Chạm màn hình</dt><dd>Chạm trúng bé, bãi phân, vi khuẩn hay thần chết là xử lý ngay thứ đó.</dd>
+        <dt>Vuốt ngang</dt><dd>Đổi tầng zoom. Hoặc bấm thẳng vào tên tầng ở hàng bên dưới.</dd>
+        <dt>Hàng nút dưới</dt><dd>Việc làm được ngay ở tầng đang xem. Danh sách dài thì mở ra ở tấm trượt phía dưới.</dd>
+        <dt>Trong trò chơi</dt><dd>Chạm thẳng vào ô muốn chọn, hoặc kéo ngón để di chuyển.</dd>
+        <dt>Bàn phím</dt><dd>Máy tính vẫn dùng được: ◀ ▶ đổi tầng, Enter chọn, Esc quay lại, V mở Lab.</dd>
       </dl>
     </div>
 
@@ -75,9 +71,9 @@
       <h2>Bốn tầng zoom</h2>
       <ul class="zooms" id="zoomList">
         <li data-z="0"><strong>Vũ trụ</strong>Vì sao ký ức, trang trí hành tinh, du hành, cấp hành tinh.</li>
-        <li data-z="1"><strong>Vùng đất</strong>Đồ chơi ngoài trời, săn trứng, dọn phân, đổi vùng.</li>
-        <li data-z="2"><strong>Thú cưng</strong>Cho ăn, chơi, tắm. Từ 19:00 cho đi ngủ, từ 6:00 đánh thức.</li>
-        <li data-z="3"><strong>Tế bào</strong>Các ô biểu tượng, chữa bệnh. Bấm A xem chỉ số.</li>
+        <li data-z="1"><strong>Vùng</strong>Đồ chơi ngoài trời, săn trứng, dọn phân, đổi vùng.</li>
+        <li data-z="2"><strong>Bé</strong>Cho ăn, chơi, tắm. Từ 19:00 cho đi ngủ, từ 6:00 đánh thức.</li>
+        <li data-z="3"><strong>Tế bào</strong>Các ô biểu tượng. Chạm trúng vi khuẩn để chữa bệnh.</li>
       </ul>
     </div>
 
@@ -102,11 +98,11 @@
     <div>
       <h2>Vòng đời</h2>
       <ul class="tips">
-        <li><b>Em bé</b> (1–4 giờ): mỗi 15 phút ở một vùng nhận 1 ô vùng. Đủ 4 ô cùng vùng thì biểu tượng "!" hiện ở tầng Tế bào. Zoom vào đó để bé tiến hoá thành trẻ con của vùng ấy. Em bé ngủ trưa 5 phút lúc 30 phút tuổi, và luôn ốm một lần lúc 10 phút tuổi.</li>
+        <li><b>Em bé</b> (1–4 giờ): mỗi 15 phút ở một vùng nhận 1 ô vùng. Đủ 4 ô cùng vùng thì biểu tượng "!" hiện ở tầng Tế bào. Mở tầng đó rồi chạm vào bé để tiến hoá thành trẻ con của vùng ấy. Em bé ngủ trưa 5 phút lúc 30 phút tuổi, và luôn ốm một lần lúc 10 phút tuổi.</li>
         <li><b>Trẻ con</b> (24–28 giờ): thức ăn quyết định loài. Mỗi 5 điểm cùng loại thành 1 ô thức ăn, tối đa 4, ô cũ nhất bị đẩy ra. Đồ sống cho +2 hoặc +1 điểm, món nấu +4. Chỉ ăn hạt hoặc ăn đều các loại thì ra loài mặc định.</li>
         <li><b>Thiếu niên</b> (24 giờ): ô chăm sóc quyết định dạng trưởng thành. Hoàn hảo cần 0 lỗi, 5 lần đầy bụng và 5 lần đầy vui. Các mức còn lại: 0–1 lỗi, 2–5 lỗi, từ 6 lỗi. Lỗi cộng dồn từ lúc trẻ con.</li>
         <li><b>Trưởng thành:</b> sống mãi nếu chăm tốt, không có giai đoạn già. Mỗi dạng có tốc độ đói và vui riêng.</li>
-        <li><b>Chết</b> khi ốm 5 lần trong một giai đoạn hoặc để đói rỗng nhiều giờ <span class="est">ước lượng 12 giờ</span>. Thần chết hiện ra trước: bấm nút ở tầng Thú cưng để đuổi đi. Bé nào sống từ 30 ngày trở lên thì khi mất thành vì sao cười, và sẽ cứu bé sau một lần.</li>
+        <li><b>Chết</b> khi ốm 5 lần trong một giai đoạn hoặc để đói rỗng nhiều giờ <span class="est">ước lượng 12 giờ</span>. Thần chết hiện ra trước: chạm thẳng vào nó ở tầng Bé để đuổi đi. Bé nào sống từ 30 ngày trở lên thì khi mất thành vì sao cười, và sẽ cứu bé sau một lần.</li>
       </ul>
     </div>
 
@@ -143,6 +139,17 @@
       </ul>
     </div>
   </aside>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheetbox" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheethead">
+      <button class="sheetnav" id="sheetBack" aria-label="Quay lại">‹</button>
+      <b id="sheetTitle"></b>
+      <button class="sheetnav" id="sheetClose" aria-label="Đóng">✕</button>
+    </div>
+    <div class="sheetitems" id="sheetItems"></div>
+  </div>
 </div>
 </body>
 </html>

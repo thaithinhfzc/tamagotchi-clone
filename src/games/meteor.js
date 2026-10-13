@@ -19,6 +19,7 @@ export default {
     m.done = true; m.hit = true; G.hits++;
     return "good";
   },
+  tap(G, x, y, t, phase) { return phase === "down" ? this.input(G, x < 32 ? "A" : x < 64 ? "B" : "C") : undefined; },
   update(G, t) {
     if (G.spawned < G.total && t >= G.next) {
       G.list.push({ lane:ri(0, 2), t0:t, dur:1600 / (0.7 + G.diff * 0.3), k:0 });
@@ -46,5 +47,5 @@ export default {
     }
     [14, 44, 74].forEach(x => rect(x, 64, 8, 1, "rgba(255,255,255,.35)"));
   },
-  hud(G) { return { BL:"A · B · C", BR:G.hits + "/" + G.total, TR:G.event ? "Bảo vệ hành tinh!" : "" }; },
+  hud(G) { return { BL:"Chạm trái · giữa · phải", BR:G.hits + "/" + G.total, TR:G.event ? "Bảo vệ hành tinh!" : "" }; },
 };

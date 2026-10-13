@@ -29,6 +29,13 @@ export default {
     closeLater([G.first, c]); G.first = null;
     return "bad";
   },
+  tap(G, x, y, t, phase) {
+    if (phase !== "down") return;
+    const i = G.cards.findIndex((c, k) => { const [cx, cy] = pos(k); return Math.abs(x - cx) < 11 && Math.abs(y - cy) < 9; });
+    if (i < 0) return;
+    G.sel = i;
+    return this.input(G, "B", t);
+  },
   update(G, t) {
     if (G.reclose && t >= G.lockUntil) { G.reclose.forEach(c => { if (!c.done) c.open = false; }); G.reclose = null; }
     if (G.cards.every(c => c.c === "burnt" || c.done)) return { stars:G.burnt === 0 && G.tries <= 6 ? 3 : G.tries <= 9 ? 2 : 1 };

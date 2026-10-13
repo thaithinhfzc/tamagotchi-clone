@@ -15,6 +15,8 @@ export default {
     G.phase = "result"; G.t0 = t;
     return G.win ? "good" : "bad";
   },
+  // the pet is in the middle: tap the side you think it will turn to
+  tap(G, x, y, t, phase) { return phase === "down" ? this.input(G, x < 48 ? "L" : "R", t) : undefined; },
   update(G, t) {
     if (G.phase !== "result" || t - G.t0 <= 1000) return;
     if (G.round < 5) { G.round++; G.phase = "wait"; return; }
@@ -25,5 +27,5 @@ export default {
     const x = G.phase === "result" ? 48 + (G.dir === "L" ? -22 : 22) * Math.min(1, (t - G.t0) / 300) : 48;
     drawAt(spriteOf(G.pet, blinkNow(t)), x, 70, 2, G.phase === "result" && G.dir === "L");
   },
-  hud(G) { return { BL:"Vòng " + G.round + "/5", BR:"Đúng " + G.score, TR:G.phase === "wait" ? "A trái · B phải" : G.win ? "Trúng!" : "Trật rồi" }; },
+  hud(G) { return { BL:"Vòng " + G.round + "/5", BR:"Đúng " + G.score, TR:G.phase === "wait" ? "Chạm trái hoặc phải" : G.win ? "Trúng!" : "Trật rồi" }; },
 };

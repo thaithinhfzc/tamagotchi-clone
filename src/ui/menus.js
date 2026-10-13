@@ -9,27 +9,39 @@ import { PLANETS } from "../data/planets.js";
 import { LEVEL_GOAL, MISSIONS, UNLOCK } from "../data/progress.js";
 import { FUEL_FULL, MAX_TOYS, MAX_DECO, SITTER_COST } from "../core/rules.js";
 import { PLAY_GAMES, LAB_GAMES } from "../games/index.js";
-import { resolveStampede, makeWish } from "../core/sim.js";
+import { resolveStampede, makeWish, evolveKid } from "../core/sim.js";
+import { alive } from "../core/creatures.js";
 import * as A from "../core/actions.js";
 
 const S = () => store.state;
 
-export function openMenu() {
-  const s = S(), p = s.pet;
+/* The menus are plain data, so the current zoom's top level can be shown as a row of buttons
+   instead of something to open. Deeper levels still go through `sub()` into the sheet. */
+export function contextMenu() {
   if (ui.zoom === 0) return spaceMenu();
   if (ui.zoom === 1) return fieldMenu();
-  if (p.stage === "dead") return;
-  if (ui.zoom === 3) {
-    if (p.sick) return toast("Bấm nút để đánh bay vi khuẩn!");
-    ui.statusPage = (ui.statusPage + 1) % 3;
-    return;
-  }
-  if (p.stage === "egg") return toast("Trứng đang ấp…");
-  tamaMenu();
+  if (ui.zoom === 3) return cellMenu();
+  return tamaMenu();
+}
+
+/* keyboard path: show that same level as a sheet */
+export function openMenu() { const m = contextMenu(); if (m.items.length) sub(m); }
+
+function cellMenu() {
+  const p = S().pet;
+  const items = [];
+  if (p.prompt) items.push({ label:"Tiến hoá ngay!", fn:() => { closeMenu(); evolveKid(p.prompt.field); } });
+  if (p.sick) items.push({ label:"Diệt vi khuẩn (" + p.viruses + ")", fn:() => act(A.tapVirus) });
+  if (alive(p)) items.push({ label:"Chỉ số của bé", fn:() => { closeMenu(); ui.statusPage = (ui.statusPage + 1) % 3; } });
+  return { title:"TẾ BÀO", items };
 }
 
 function tamaMenu() {
   const p = S().pet;
+  if (p.stage === "dead") return { title:"VỀ VỚI CÁC VÌ SAO", items:[{ label:"Ấp quả trứng mới", fn:() => { act(A.newEggAfterDeath); ui.walkers = null; } }] };
+  if (p.stage === "egg") return { title:"TRỨNG", items:[] };
+  if (p.grim) return { title:"THẦN CHẾT!", items:[{ label:"Đuổi nó đi!", fn:() => act(A.scareGrim) }] };
+  if (p.injured) return { title:p.name.toUpperCase(), items:[{ label:"Băng bó (" + p.injured + ")", fn:() => act(A.tendInjury) }] };
   const items = [
     { label:"Cho ăn", fn:() => sub({ title:"CHO ĂN", items:[{ label:"Đồ ăn", fn:foodMenu }, { label:"Đồ ăn vặt", fn:snackMenu }] }) },
     { label:"Chơi", fn:() => sub({ title:"CHƠI", items:PLAY_GAMES.map(g => ({ label:g.name, fn:() => startGame(g.id) })) }) },
@@ -37,7 +49,7 @@ function tamaMenu() {
   ];
   if (A.canSleepNow()) items.push({ label:"Cho đi ngủ", fn:() => act(A.putToSleep) });
   if (A.canWakeNow()) items.push({ label:"Đánh thức", fn:() => act(A.wakeUp) });
-  sub({ title:p.name.toUpperCase(), items });
+  return { title:p.name.toUpperCase(), items };
 }
 
 function foodMenu() {
@@ -57,7 +69,7 @@ function snackMenu() {
 
 function fieldMenu() {
   const s = S(), p = s.pet;
-  sub({ title:FIELDS[p.field].name.toUpperCase(), items:[
+  return { title:FIELDS[p.field].name.toUpperCase(), items:[
     unlocked("toys") ? { label:"Đồ chơi ngoài trời", fn:toyMenu } : lockItem("Đồ chơi ngoài trời", UNLOCK.toys),
     unlocked("hunt") ? { label:"Săn trứng", fn:() => sub({ title:"ĐI ĐÂU?", items:[
       { label:"Núi lửa", fn:() => act(() => A.startHunt("volcano")) }, { label:"Suối", fn:() => act(() => A.startHunt("spring")) }] }) } : lockItem("Săn trứng", UNLOCK.hunt),
@@ -65,7 +77,7 @@ function fieldMenu() {
     unlocked("switchField") ? { label:"Đổi vùng", fn:() => sub({ title:"ĐỔI VÙNG", items:ALL_FIELDS.map(f => fieldsOpen().includes(f)
       ? { label:FIELDS[f].name + (f === p.field ? " ●" : ""), fn:() => act(() => A.setField(f)) }
       : { label:FIELDS[f].name + " (khoá)", dis:true, fn:() => toast("Chưa mở") }) }) } : lockItem("Đổi vùng", UNLOCK.switchField),
-  ] });
+  ] };
 }
 
 function toyMenu() {
@@ -77,7 +89,7 @@ function toyMenu() {
 
 function spaceMenu() {
   const s = S(), lv = s.level;
-  sub({ title:"VŨ TRỤ", items:[
+  return { title:"VŨ TRỤ", items:[
     { label:"Kết nối", fn:() => toast("Cần một máy thứ hai để kết nối") },
     { label:"Vì sao ký ức (" + s.memories.length + ")", fn:() => showList("VÌ SAO KÝ ỨC", s.memories.slice().reverse()
       .map(m => (m.smile ? "☆ " : "★ ") + m.name + " · " + m.days + " tuổi · " + m.cause + (m.smile && !m.used ? " · còn cứu được" : ""))) },
@@ -88,7 +100,7 @@ function spaceMenu() {
       "Đã nuôi lớn (tính khi mai mối/trứng mới): " + s.adultsCounted,
       "Vùng: " + fieldsOpen().map(f => FIELDS[f].short).join(", "),
       ...(lv >= 10 ? ["Đội ngũ phòng Lab cảm ơn bạn đã chăm hành tinh!"] : [])]) },
-  ] });
+  ] };
 }
 
 function travelMenu() {

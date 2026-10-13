@@ -25,6 +25,11 @@ export default {
       return hit ? "good" : "bad";
     }
   },
+  tap(G, x, y, t, phase) {
+    if (phase !== "down" || G.phase !== "pick") return;
+    G.sel = SLOTX.reduce((best, sx, i) => (Math.abs(x - sx) < Math.abs(x - SLOTX[best]) ? i : best), 0);
+    return this.input(G, "B", t);
+  },
   update(G, t) {
     const e = t - G.t0;
     if (G.phase === "show" && e > 1100) { G.phase = "hide"; G.t0 = t; }
@@ -57,5 +62,5 @@ export default {
     }
     if (G.phase === "pick") { const x = SLOTX[G.sel], bob = Math.floor(t / 300) % 2; rect(x - 2, 30 + bob, 5, 1, OUT); rect(x - 1, 31 + bob, 3, 1, OUT); rect(x, 32 + bob, 1, 1, OUT); }
   },
-  hud(G) { return { BL:"Vòng " + G.round + "/3", BR:"Đúng " + G.score, TR:G.phase === "pick" ? "Bé ở đâu? B chọn" : G.phase === "show" ? "Nhìn kỹ!" : "" }; },
+  hud(G) { return { BL:"Vòng " + G.round + "/3", BR:"Đúng " + G.score, TR:G.phase === "pick" ? "Bé ở đâu? Chạm vào UFO" : G.phase === "show" ? "Nhìn kỹ!" : "" }; },
 };

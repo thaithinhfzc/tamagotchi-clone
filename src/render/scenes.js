@@ -176,6 +176,8 @@ function drawTravel(t, a) {
 }
 
 /* ---------- Cell view ---------- */
+// Shared with the tap test in ui/input.js: curing means landing a finger on a drifting virus.
+export const virusPos = (i, t) => [48 + Math.cos(t / 400 + i * 1.6) * 14, 42 + Math.sin(t / 400 + i * 1.6) * 12 + 2];
 const CELLS = Array.from({ length:9 }, (_, i) => ({ x:(i * 29 + 7) % W, y:(i * 17 + 9) % H, r:5 + (i % 3) * 2, v:(i % 2 ? 1 : -1) * (0.5 + (i % 3) * 0.3) }));
 
 /* icons orbiting the Tama Cell: field cells (baby/kid), food cells (kid), care cells (young/adult) */
@@ -210,7 +212,7 @@ export function drawCellView(t) {
   else if (mood > 7) { rect(cx - 2, cy + 4, 1, 1, OUT); rect(cx + 1, cy + 4, 1, 1, OUT); rect(cx - 1, cy + 5, 2, 1, OUT); }
   const icons = cellIcons(p), n = Math.max(icons.length, 1);
   icons.forEach((ic, i) => { const an = -Math.PI / 2 + i * (2 * Math.PI / n) + t / 9000; drawAt(iconSprite(ic), cx + Math.cos(an) * 34, cy + Math.sin(an) * 24 + 3, 1); });
-  if (p.sick) for (let i = 0; i < p.viruses; i++) drawAt(iconSprite("virus"), cx + Math.cos(t / 400 + i * 1.6) * 14, cy + Math.sin(t / 400 + i * 1.6) * 12 + 2, 2);
+  if (p.sick) for (let i = 0; i < p.viruses; i++) drawAt(iconSprite("virus"), ...virusPos(i, t), 2);
 }
 
 /* start screen: chosen shell's field with a wobbling egg */

@@ -23,9 +23,30 @@ export function startGame(id, { event = false } = {}) {
 export function gameInput(a) {
   const G = ui.game;
   if (!G) return;
-  if (a === "C") { if (G.event) return; ui.game = null; ui.mode = "main"; toast("Thôi không chơi nữa"); return; }
+  if (a === "C") return quitGame();
   sfx(GAMES[G.id].input(G, a, now()));
 }
+
+export function quitGame() {
+  const G = ui.game;
+  if (!G || G.event) return;            // the meteor emergency has to be played out
+  ui.game = null; ui.mode = "main";
+  toast("Thôi không chơi nữa");
+}
+
+/* A touch on the screen, in canvas pixels. `phase` is "down", "move" or "up": steering games
+   follow every phase, picking games act on "down" only, and a game that needs aiming before it
+   commits (Lau bụi) waits for "up". */
+export function gameTap(x, y, phase) {
+  const G = ui.game;
+  if (!G) return;
+  const g = GAMES[G.id];
+  if (g.tap) sfx(g.tap(G, x, y, now(), phase));
+}
+
+/* Buttons a game needs that no amount of tapping the scene can express. */
+export const gamePad = () => (GAMES[ui.game.id].pad || []).map(b =>
+  ({ label:b.label, cls:b.cls || "", fn:() => gameInput(b.a) }));
 
 export function tickGame(t) {
   const G = ui.game;

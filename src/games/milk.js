@@ -1,7 +1,7 @@
 // Lab · Feeding Baby Milk!: move the bottle (A / dial), B feeds a crying baby. Won after feeding 10 (wiki).
 import { rect, drawAt, OUT } from "../render/canvas.js";
 import { petSprite, iconSprite } from "../render/sprites.js";
-import { pick, rnd } from "../util.js";
+import { pick, rnd, clamp } from "../util.js";
 import { labBackdrop, secondsLeft } from "./common.js";
 
 const BABY = { hue:52, sat:70, l:80, eye:"tall" };
@@ -17,6 +17,12 @@ export default {
     const c = G.cribs[G.sel];
     if (c.cry) { c.cry = false; c.fedT = t; G.fed++; return "good"; }
     G.miss++; return "bad";
+  },
+  // one tap picks the crib and feeds it; no cursor to walk across four babies
+  tap(G, x, y, t, phase) {
+    if (phase !== "down") return;
+    G.sel = clamp(Math.round((x - 12) / 24), 0, 3);
+    return this.input(G, "B", t);
   },
   update(G, t) {
     let ev;

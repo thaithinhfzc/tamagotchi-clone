@@ -12,6 +12,7 @@ export default {
     if (a === "L" || a === "A") G.x = clamp(G.x - 8, 10, 86);
     if (a === "R" || a === "B") G.x = clamp(G.x + 8, 10, 86);
   },
+  tap(G, x) { G.x = clamp(x, 10, 86); },
   update(G, t, dt) {
     G.dist += dt * 6;
     if (t > G.next && G.dist < G.goal - 6) { G.obs.push({ x:ri(10, 86), y:84, kind:random() < 0.35 ? "ghost" : pick(["rock", "tree"]), vx:rnd(-14, 14) }); G.next = t + rnd(500, 900); }
@@ -33,5 +34,5 @@ export default {
     if (G.goal - G.dist < 8) drawAt(iconSprite("chest"), 48, 30 + (G.goal - G.dist) * 6, 2);
     if (!(t - G.hitT < 600 && Math.floor(t / 100) % 2)) drawAt(spriteOf(G.pet, false), G.x, 30, 1);
   },
-  hud(G) { return { BL:"♥".repeat(G.lives), BR:Math.max(0, Math.ceil(G.goal - G.dist)) + "m", TR:"◀ ▶ né" }; },
+  hud(G) { return { BL:"♥".repeat(G.lives), BR:Math.max(0, Math.ceil(G.goal - G.dist)) + "m", TR:"Kéo để né" }; },
 };

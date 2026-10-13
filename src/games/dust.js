@@ -20,6 +20,10 @@ export default {
     if (a === "R" || a === "B") G.padX = clamp(G.padX + 7, 8, 88);
     if (!G.launched) { G.launched = true; G.vx = pick([-30, 30]); G.vy = -45 - G.diff * 8; }
   },
+  tap(G, x, y, t, phase) {
+    G.padX = clamp(x, 8, 88);                       // slide to aim while the finger is down…
+    if (phase === "up" && !G.launched) { G.launched = true; G.vx = pick([-30, 30]); G.vy = -45 - G.diff * 8; }
+  },
   update(G, t, dt) {
     if (!G.launched) { G.bx = G.padX; G.by = 66; }
     else {
@@ -44,5 +48,5 @@ export default {
     rect(G.padX - 8, 70, 16, 2, "#5a5f73");
     drawAt(iconSprite("vac"), G.bx, G.by + 2, 1);
   },
-  hud(G, t) { return { BL:"Vòng " + G.round + "/" + G.rounds, BR:secondsLeft(G, t), TR:G.launched ? "" : "Bấm để bắn" }; },
+  hud(G, t) { return { BL:"Vòng " + G.round + "/" + G.rounds, BR:secondsLeft(G, t), TR:G.launched ? "" : "Chạm để bắn" }; },
 };

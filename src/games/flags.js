@@ -17,6 +17,8 @@ export default {
     G.answered = true; G.ok = a === G.cmd; if (G.ok) G.score++;
     return G.ok ? "good" : "bad";
   },
+  // nothing on screen stands for "both flags", so this one keeps real buttons
+  pad:[{ label:"Cờ trắng", a:"A" }, { label:"Cờ đỏ", a:"B" }, { label:"Giơ cả hai", a:"AB", cls:"wide" }],
   update(G, t) {
     const e = t - G.t0;
     if (G.phase === "cue" && e > 600) {
@@ -47,5 +49,5 @@ export default {
       rect(x, top, 1, 70 - top, "#8a5a3b"); rect(fx, top, 7, 5, c); rect(fx, top, 7, 1, OUT);
     }
   },
-  hud(G) { return { BL:"Vòng " + G.round + "/10", BR:"Đúng " + G.score, TR:G.phase === "res" ? (G.ok ? "Đúng!" : "Sai rồi") : "A trắng · B đỏ" }; },
+  hud(G) { return { BL:"Vòng " + G.round + "/10", BR:"Đúng " + G.score, TR:G.phase === "res" ? (G.ok ? "Đúng!" : "Sai rồi") : "Trắng · Đỏ · Cả hai" }; },
 };
