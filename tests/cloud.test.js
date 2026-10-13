@@ -202,3 +202,64 @@ test("the server refuses a payload that is not a game save", async () => {
   });
   assert.equal(res.status, 400);
 });
+
+/* ---------- the Google redirect flow ----------
+   Browser globals are stubbed so the fragment-reading path can be exercised in node. */
+function browser({ hash, nonce, path = "/tamagotchi-clone/" }) {
+  const bag = new Map(nonce === undefined ? [] : [["hanh-tinh-bo-tui.nonce", nonce]]);
+  // A real location.hash keeps its leading "#"; dropping it here would test the wrong string.
+  globalThis.location = { origin:"https://thaithinhfzc.github.io", pathname:path, search:"",
+    hash:hash ? "#" + hash : "" };
+  globalThis.history = { replaceState(){ globalThis.history.scrubbed = true; } };
+  globalThis.sessionStorage = {
+    getItem:k => (bag.has(k) ? bag.get(k) : null),
+    setItem:(k, v) => bag.set(k, String(v)),
+    removeItem:k => bag.delete(k),
+  };
+  return bag;
+}
+const fragmentToken = nonce => {
+  const now = Math.floor(Date.now() / 1000);
+  return b64({ alg:"RS256", kid:KID, typ:"JWT" }) + "."
+    + b64({ iss:"https://accounts.google.com", aud:CLIENT_ID, sub:"redir-user", nonce, iat:now, exp:now + 3600 })
+    + ".signature-checked-on-the-server";
+};
+
+test("the redirect URI is the page itself, with index.html normalised away", () => {
+  browser({ hash:"", path:"/tamagotchi-clone/index.html" });
+  assert.equal(C.redirectUri(), "https://thaithinhfzc.github.io/tamagotchi-clone/");
+  browser({ hash:"", path:"/tamagotchi-clone/" });
+  assert.equal(C.redirectUri(), "https://thaithinhfzc.github.io/tamagotchi-clone/");
+});
+
+test("a returning token is accepted only when it answers this tab's nonce", () => {
+  browser({ hash:"id_token=" + fragmentToken("n1") + "&token_type=bearer", nonce:"n1" });
+  assert.equal(C.takeRedirectToken().token.split(".").length, 3);
+  assert.equal(globalThis.history.scrubbed, true, "the token must be wiped from the address bar");
+
+  // A token minted for some other sign-in, pasted into our URL, must not be forwarded.
+  browser({ hash:"id_token=" + fragmentToken("attacker"), nonce:"n1" });
+  assert.match(C.takeRedirectToken().error, /không khớp/);
+
+  // No nonce stored means nothing in this tab asked for a sign-in.
+  browser({ hash:"id_token=" + fragmentToken("n1") });
+  assert.ok(C.takeRedirectToken().error);
+});
+
+test("the nonce is single use, and a plain page load reads nothing", () => {
+  const bag = browser({ hash:"id_token=" + fragmentToken("n1"), nonce:"n1" });
+  assert.ok(C.takeRedirectToken().token);
+  assert.equal(bag.has("hanh-tinh-bo-tui.nonce"), false, "a spent nonce must not be replayable");
+
+  browser({ hash:"", nonce:"n1" });
+  assert.equal(C.takeRedirectToken(), null);
+  browser({ hash:"zoom=2", nonce:"n1" });
+  assert.equal(C.takeRedirectToken(), null);
+});
+
+test("Google refusing or the player cancelling is reported, not swallowed", () => {
+  browser({ hash:"error=access_denied", nonce:"n1" });
+  const r = C.takeRedirectToken();
+  assert.match(r.error, /huỷ/);
+  assert.equal(r.token, undefined);
+});

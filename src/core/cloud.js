@@ -1,5 +1,5 @@
 // Cloud save: sign in with Google once per device, then push/pull the whole save blob.
-// Kept DOM-free — ui/cloudpanel.js owns the Google button and the sync cadence.
+// No DOM here — ui/cloudpanel.js owns the gate and the sync cadence.
 import { store } from "./store.js";
 import { save, catchUp } from "./state.js";
 import { SAVE_VERSION } from "./rules.js";
@@ -85,6 +85,63 @@ function adopt(storage, rec, info) {
 function expired(storage) {
   signOut(storage);
   return { ok:false, expired:true, msg:"Phiên đã hết hạn, đăng nhập lại" };
+}
+
+/* ---------- Google redirect flow ----------
+   Plain OAuth 2.0 in the top-level page: no third-party script and no iframe, because the
+   Google Identity Services button draws itself in a cross-origin frame that Chrome on
+   Android refuses to paint — which left the gate blank with no way in. */
+const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+const NONCE_KEY = "hanh-tinh-bo-tui.nonce";
+
+/* Google demands a byte-exact match against a registered URI, so normalise index.html away. */
+export function redirectUri() {
+  return location.origin + location.pathname.replace(/index\.html$/, "");
+}
+
+const randomNonce = () => {
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  return [...b].map(x => x.toString(16).padStart(2, "0")).join("");
+};
+
+export function beginSignIn() {
+  const nonce = randomNonce();
+  // Private mode can refuse storage; the token's own signature, aud and exp still gate the server.
+  try { sessionStorage.setItem(NONCE_KEY, nonce); } catch { /* ignore */ }
+  const q = new URLSearchParams({
+    client_id:CLIENT_ID,
+    response_type:"id_token",
+    scope:"openid",
+    redirect_uri:redirectUri(),
+    nonce,
+    prompt:"select_account",
+  });
+  location.assign(AUTH_URL + "?" + q);
+}
+
+const claimsOf = token => {
+  try { return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))); }
+  catch { return {}; }
+};
+
+/* Reads what Google put in the fragment on the way back. The nonce only proves this is the
+   sign-in *this tab* asked for; the token itself is verified on the server, never here. */
+export function takeRedirectToken() {
+  const hash = typeof location === "undefined" ? "" : location.hash.slice(1);
+  if (!hash || !/(^|&)(id_token|error)=/.test(hash)) return null;
+  const q = new URLSearchParams(hash);
+  // Scrub it either way: an id token left in the address bar gets shared by accident.
+  history.replaceState(null, "", location.pathname + location.search);
+
+  if (q.get("error")) return { error:q.get("error") === "access_denied" ? "Bạn đã huỷ đăng nhập." : "Google từ chối đăng nhập." };
+  const token = q.get("id_token");
+  if (!token) return null;
+
+  let want = null;
+  try { want = sessionStorage.getItem(NONCE_KEY); sessionStorage.removeItem(NONCE_KEY); } catch { /* ignore */ }
+  if (!want || claimsOf(token).nonce !== want) return { error:"Lần đăng nhập này không khớp, thử lại." };
+  return { token };
 }
 
 /* ---------- sign in ---------- */
