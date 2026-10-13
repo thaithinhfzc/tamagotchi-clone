@@ -8,6 +8,10 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121624;--surface:#1a2032;--ink:#e7eaf3;--muted:#9aa3b8;--line:#2b3348;--accent:#ff7aa6;--chip:#232a3f;--est:#f0c060;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#121624;--surface:#1a2032;--ink:#e7eaf3;--muted:#9aa3b8;--line:#2b3348;--accent:#ff7aa6;--chip:#232a3f;--est:#f0c060;color-scheme:dark}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+/* The `hidden` attribute only works through the browser's default stylesheet, and any rule of
+   ours outranks that — `#gate{display:grid}` silently kept the sign-in overlay on screen for
+   good. Anything given a `display` here must not be able to ignore being hidden. */
+[hidden]{display:none!important}
 .wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:28px 48px;display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:40px;align-items:start}
 @media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr);gap:28px}}
 .stage{display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0;position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}
